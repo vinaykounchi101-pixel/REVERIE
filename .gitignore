@@ -8,6 +8,9 @@ dist/
 build/
 .next/
 out/
+target/
+reverie-backend/target/
+*.class
 
 # Environment files
 .env

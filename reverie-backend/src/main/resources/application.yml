@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: reverie-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
+    default-property-inclusion: non_null
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+
+app:
+  environment: ${APP_ENVIRONMENT:local}
+  public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:8080}
+  frontend-origin: ${FRONTEND_ORIGIN:http://localhost:3000,http://localhost:3001}
+  auth:
+    jwt-secret: ${JWT_SECRET:reverie-default-ultra-secure-development-jwt-secret-key-32bytes-min}
+    access-token-expiration-seconds: ${JWT_ACCESS_EXPIRATION:900}
+    refresh-token-expiration-seconds: ${JWT_REFRESH_EXPIRATION:604800}
+    password-reset-expiry-minutes: ${AUTH_PASSWORD_RESET_EXPIRY:15}
+    otp-expiry-minutes: ${AUTH_OTP_EXPIRY:10}
+    otp-max-attempts: ${AUTH_OTP_MAX_ATTEMPTS:5}
+  checkout:
+    session-timeout-minutes: ${CHECKOUT_SESSION_TIMEOUT:30}
+    max-line-items: ${CHECKOUT_MAX_LINE_ITEMS:20}
+  inventory:
+    low-stock-threshold: ${INVENTORY_LOW_STOCK_THRESHOLD:5}
+    reservation-timeout-minutes: ${INVENTORY_RESERVATION_TIMEOUT:15}
+  shipping:
+    delivery-min-days: ${SHIPPING_DELIVERY_MIN_DAYS:3}
+    delivery-max-days: ${SHIPPING_DELIVERY_MAX_DAYS:7}
+    free-threshold-paise: ${SHIPPING_FREE_THRESHOLD_PAISE:10000000}
+    default-rate-paise: ${SHIPPING_DEFAULT_RATE_PAISE:50000}
+  pricing:
+    default-currency: ${PRICING_DEFAULT_CURRENCY:INR}
+    default-tax-rate-percent: ${PRICING_TAX_RATE:18.0}
+  luxury:
+    high-value-order-threshold-paise: ${LUXURY_HIGH_VALUE_THRESHOLD_PAISE:25000000}
+    max-limited-edition-per-customer: ${LUXURY_MAX_LIMITED_EDITION:1}
+  providers:
+    payment: ${PAYMENT_PROVIDER:mock}
+    shipping: ${SHIPPING_PROVIDER:mock}
+    storage: ${STORAGE_PROVIDER:local}
+    ai: ${AI_PROVIDER:mock}
+    notification: ${NOTIFICATION_PROVIDER:dev}
