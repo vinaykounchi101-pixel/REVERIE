@@ -11,6 +11,10 @@ public class TestDataCleaner {
     private JdbcTemplate jdbcTemplate;
 
     public void cleanAll() {
+        jdbcTemplate.execute("DELETE FROM support_ticket_messages");
+        jdbcTemplate.execute("DELETE FROM support_tickets");
+        jdbcTemplate.execute("DELETE FROM faq_items");
+        jdbcTemplate.execute("DELETE FROM brand_stories");
         jdbcTemplate.execute("DELETE FROM wallet_transactions");
         jdbcTemplate.execute("DELETE FROM refunds");
         jdbcTemplate.execute("DELETE FROM return_requests");
