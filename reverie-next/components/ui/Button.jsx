@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export default function Button({
   children,
-  variant = 'primary', // 'primary' | 'secondary' | 'white' | 'text' | 'text-light'
+  variant = 'primary',
   className = '',
   onClick,
   href,
@@ -25,13 +25,15 @@ export default function Button({
       ? 'btn-text-light'
       : '';
 
+  const combinedClass = [baseClass, variantClass, className].filter(Boolean).join(' ');
+
   const content = (
     <>
       {icon && <span className="btn-icon">{icon}</span>}
       <span>{children}</span>
       {arrow && (
-        <span className="arrow-icon" aria-hidden="true">
-          ?
+        <span className="arrow-icon" aria-hidden="true" style={{ display: 'inline-flex', alignItems: 'center', marginLeft: '6px' }}>
+          &rarr;
         </span>
       )}
     </>
@@ -41,7 +43,7 @@ export default function Button({
     return (
       <Link
         href={href}
-        className={`${baseClass} ${variantClass} ${className}`.trim()}
+        className={combinedClass}
         {...props}
       >
         {content}
@@ -53,7 +55,7 @@ export default function Button({
     <button
       type="button"
       onClick={onClick}
-      className={`${baseClass} ${variantClass} ${className}`.trim()}
+      className={combinedClass}
       {...props}
     >
       {content}
