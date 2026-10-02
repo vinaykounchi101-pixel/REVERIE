@@ -59,8 +59,10 @@ public class SecurityConfig {
                     "/api/categories/**",
                     "/api/collections/**",
                     "/api/search/**",
-                    "/api/faqs/**"
+                    "/api/faqs/**",
+                    "/api/reviews/product/**"
                 ).permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/concierge/book").permitAll()
 
                 // Admin endpoints strictly require ADMIN or SUPER_ADMIN role
                 .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "PRODUCT_MGR", "INVENTORY_MGR", "ORDER_MGR", "SUPPORT_AGENT", "CONTENT_MGR", "ANALYST")
