@@ -30,12 +30,12 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
 
     @Query("SELECT p FROM Product p " +
            "WHERE p.status = 'PUBLISHED' " +
-           "AND (:keyword IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "     OR LOWER(p.shortDescription) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "     OR LOWER(p.referenceNumber) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-           "AND (:categorySlug IS NULL OR p.category.slug = :categorySlug) " +
-           "AND (:collectionSlug IS NULL OR p.collection.slug = :collectionSlug) " +
-           "AND (:gender IS NULL OR LOWER(p.gender) = LOWER(:gender)) " +
+           "AND (CAST(:keyword AS string) IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) " +
+           "     OR LOWER(p.shortDescription) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) " +
+           "     OR LOWER(p.referenceNumber) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%'))) " +
+           "AND (CAST(:categorySlug AS string) IS NULL OR p.category.slug = CAST(:categorySlug AS string)) " +
+           "AND (CAST(:collectionSlug AS string) IS NULL OR p.collection.slug = CAST(:collectionSlug AS string)) " +
+           "AND (CAST(:gender AS string) IS NULL OR LOWER(p.gender) = LOWER(CAST(:gender AS string))) " +
            "AND (:minPricePaise IS NULL OR p.basePricePaise >= :minPricePaise) " +
            "AND (:maxPricePaise IS NULL OR p.basePricePaise <= :maxPricePaise)")
     Page<Product> searchProducts(

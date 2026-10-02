@@ -14,164 +14,141 @@ VALUES
 ON CONFLICT (slug) DO NOTHING;
 
 -- 2. Master Collections
-INSERT INTO collections (id, name, slug, description, banner_image_url, is_featured)
+INSERT INTO collections (id, name, slug, tagline, description, reference_code, hero_image_url)
 VALUES
-    ('b1000000-0000-0000-0000-000000000001', 'The Holy Trinity of Haute Horlogerie', 'the-holy-trinity', 'Masterpieces from Patek Philippe, Audemars Piguet, and Vacheron Constantin.', 'https://cdn.reverie.luxury/collections/holy-trinity-banner.webp', true),
-    ('b1000000-0000-0000-0000-000000000002', 'Independent Master Watchmakers', 'independent-masters', 'Uncompromising artisanal creations from F.P. Journe, MB&F, and H. Moser & Cie.', 'https://cdn.reverie.luxury/collections/independent-masters-banner.webp', true),
-    ('b1000000-0000-0000-0000-000000000003', 'Saxon Precision & Glashütte Artistry', 'saxon-precision', 'German fine watchmaking defined by three-quarter plates and untreated German silver from A. Lange & Söhne.', 'https://cdn.reverie.luxury/collections/saxon-precision-banner.webp', true),
-    ('b1000000-0000-0000-0000-000000000004', 'Avant-Garde Architectural Complications', 'avant-garde-architecture', 'Futuristic mechanical sculptures redefining three-dimensional time display.', 'https://cdn.reverie.luxury/collections/avant-garde-banner.webp', false)
+    ('b1000000-0000-0000-0000-000000000001', 'The Holy Trinity of Haute Horlogerie', 'the-holy-trinity', 'Geneva & Le Brassus High Horology', 'Masterpieces from Patek Philippe, Audemars Piguet, and Vacheron Constantin.', 'COL-HT-01', 'https://cdn.reverie.luxury/collections/holy-trinity-banner.webp'),
+    ('b1000000-0000-0000-0000-000000000002', 'Independent Master Watchmakers', 'independent-masters', 'Uncompromising Independent Craftsmanship', 'Artisanal creations from F.P. Journe, MB&F, and H. Moser & Cie.', 'COL-IND-02', 'https://cdn.reverie.luxury/collections/independent-masters-banner.webp'),
+    ('b1000000-0000-0000-0000-000000000003', 'Saxon Precision & Glashütte Artistry', 'saxon-precision', 'German Horological Supremacy', 'German fine watchmaking defined by three-quarter plates and untreated German silver from A. Lange & Söhne.', 'COL-SAX-03', 'https://cdn.reverie.luxury/collections/saxon-precision-banner.webp'),
+    ('b1000000-0000-0000-0000-000000000004', 'Avant-Garde Architectural Complications', 'avant-garde-architecture', 'Kinetic Sculptures in Time', 'Futuristic mechanical sculptures redefining three-dimensional time display.', 'COL-AVG-04', 'https://cdn.reverie.luxury/collections/avant-garde-banner.webp')
 ON CONFLICT (slug) DO NOTHING;
 
 -- 3. Master Products
-INSERT INTO products (id, category_id, collection_id, name, slug, reference_number, description, base_price_paise, gender, status, is_featured, created_at, updated_at)
+INSERT INTO products (id, category_id, collection_id, name, slug, reference_number, short_description, description, base_price_paise, sale_price_paise, gender, status, primary_image_url, rating, reviews_count, created_at, updated_at)
 VALUES
     -- Product 1: Patek Philippe Celestial Grand Complication
-    ('p1000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000001',
+    ('a1000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000001',
      'Patek Philippe Celestial Grand Complication', 'patek-philippe-celestial-grand-complication', '6102P-001',
+     'Nocturnal sky over Geneva in Platinum 950.',
      'The Celestial 6102P displays the nocturnal sky over Geneva with a rotating sapphire crystal disk charting the stars, meridian passage of Sirius, and moon phases with astronomical precision.',
-     3850000000, 'Unisex', 'PUBLISHED', true, NOW(), NOW()),
+     3850000000, 3850000000, 'Unisex', 'PUBLISHED', 'https://cdn.reverie.luxury/watches/patek-6102p-front.webp', 5.0, 12, NOW(), NOW()),
 
     -- Product 2: A. Lange & Söhne Datograph Perpetual Tourbillon
-    ('p1000000-0000-0000-0000-000000000002', 'c1000000-0000-0000-0000-000000000003', 'b1000000-0000-0000-0000-000000000003',
+    ('a1000000-0000-0000-0000-000000000002', 'c1000000-0000-0000-0000-000000000003', 'b1000000-0000-0000-0000-000000000003',
      'A. Lange & Söhne Datograph Perpetual Tourbillon', 'lange-sohne-datograph-perpetual-tourbillon', '740.056FE',
+     'Flyback chronograph, perpetual calendar & tourbillon in 18K Honeygold.',
      'Combining a flyback chronograph, jumping minute counter, perpetual calendar, moon-phase display, and a one-minute tourbillon in patented 18-carat Honeygold.',
-     2950000000, 'Men', 'PUBLISHED', true, NOW(), NOW()),
+     2950000000, 2950000000, 'Men', 'PUBLISHED', 'https://cdn.reverie.luxury/watches/lange-datograph-honeygold-front.webp', 5.0, 8, NOW(), NOW()),
 
     -- Product 3: Vacheron Constantin Les Cabinotiers Armillary Tourbillon
-    ('p1000000-0000-0000-0000-000000000003', 'c1000000-0000-0000-0000-000000000002', 'b1000000-0000-0000-0000-000000000001',
+    ('a1000000-0000-0000-0000-000000000003', 'c1000000-0000-0000-0000-000000000002', 'b1000000-0000-0000-0000-000000000001',
      'Vacheron Constantin Les Cabinotiers Armillary Tourbillon', 'vacheron-constantin-cabinotiers-armillary-tourbillon', '9810C-000G',
+     'Bi-axial spherical armillary tourbillon with double retrograde indications.',
      'A bi-axial spherical armillary tourbillon featuring instantaneous double retrograde hours and minutes with the prestigious Hallmark of Geneva.',
-     4200000000, 'Unisex', 'PUBLISHED', true, NOW(), NOW()),
+     4200000000, 4200000000, 'Unisex', 'PUBLISHED', 'https://cdn.reverie.luxury/watches/vc-cabinotiers-armillary-front.webp', 5.0, 6, NOW(), NOW()),
 
     -- Product 4: F.P. Journe Chronomètre Souverain Nacre
-    ('p1000000-0000-0000-0000-000000000004', 'c1000000-0000-0000-0000-000000000006', 'b1000000-0000-0000-0000-000000000002',
+    ('a1000000-0000-0000-0000-000000000004', 'c1000000-0000-0000-0000-000000000006', 'b1000000-0000-0000-0000-000000000002',
      'F.P. Journe Chronomètre Souverain Invenit et Fecit', 'fp-journe-chronometre-souverain', 'CS-PT-MOP',
+     'Solid 18K rose gold calibre with twin chronometer-grade barrels in Platinum 950.',
      'Crafted entirely in 18k solid rose gold movement plates with twin chronometer-grade barrels delivering stable isochronous torque, housed in Platinum 950.',
-     1650000000, 'Unisex', 'PUBLISHED', true, NOW(), NOW()),
+     1650000000, 1650000000, 'Unisex', 'PUBLISHED', 'https://cdn.reverie.luxury/watches/fp-journe-cs-front.webp', 5.0, 15, NOW(), NOW()),
 
     -- Product 5: Audemars Piguet Royal Oak Concept Flying Tourbillon GMT
-    ('p1000000-0000-0000-0000-000000000005', 'c1000000-0000-0000-0000-000000000002', 'b1000000-0000-0000-0000-000000000001',
+    ('a1000000-0000-0000-0000-000000000005', 'c1000000-0000-0000-0000-000000000002', 'b1000000-0000-0000-0000-000000000001',
      'Audemars Piguet Royal Oak Concept Flying Tourbillon GMT', 'ap-royal-oak-concept-flying-tourbillon-gmt', '26589IO.OO.D002CA.01',
+     'Sandblasted titanium and green ceramic architecture with flying tourbillon.',
      'Sandblasted titanium and green ceramic architecture incorporating flying tourbillon, second timezone GMT, and crown position indicator with 237-hour power reserve.',
-     2250000000, 'Men', 'PUBLISHED', true, NOW(), NOW()),
+     2250000000, 2250000000, 'Men', 'PUBLISHED', 'https://cdn.reverie.luxury/watches/ap-ro-concept-green-front.webp', 5.0, 9, NOW(), NOW()),
 
     -- Product 6: MB&F Legacy Machine Perpetual EVO
-    ('p1000000-0000-0000-0000-000000000006', 'c1000000-0000-0000-0000-000000000003', 'b1000000-0000-0000-0000-000000000002',
+    ('a1000000-0000-0000-0000-000000000006', 'c1000000-0000-0000-0000-000000000003', 'b1000000-0000-0000-0000-000000000002',
      'MB&F Legacy Machine Perpetual EVO Zirconium', 'mbf-legacy-machine-perpetual-evo-zirconium', '07.ZL.BL',
+     'Stephen McDonnell mechanical processor perpetual calendar in Zirconium.',
      'Stephen McDonnell revolutionary mechanical processor perpetual calendar with suspended balance wheel over dial, encased in ultra-rare Zirconium metal with FlexRing shock absorber.',
-     1980000000, 'Unisex', 'PUBLISHED', true, NOW(), NOW()),
+     1980000000, 1980000000, 'Unisex', 'PUBLISHED', 'https://cdn.reverie.luxury/watches/mbf-lm-perpetual-evo-front.webp', 5.0, 7, NOW(), NOW()),
 
     -- Product 7: H. Moser & Cie Streamliner Flyback Chronograph Automatic
-    ('p1000000-0000-0000-0000-000000000007', 'c1000000-0000-0000-0000-000000000005', 'b1000000-0000-0000-0000-000000000002',
+    ('a1000000-0000-0000-0000-000000000007', 'c1000000-0000-0000-0000-000000000005', 'b1000000-0000-0000-0000-000000000002',
      'H. Moser & Cie Streamliner Flyback Chronograph Funky Blue', 'moser-streamliner-flyback-chronograph-funky-blue', '6902-1201',
+     'AgenGraphe central chronograph with integrated steel cushion bracelet.',
      'Featuring the revolutionary AgenGraphe central chronograph movement with coaxial minute and seconds hands over a fumé dial with integrated cushion-link bracelet.',
-     620000000, 'Men', 'PUBLISHED', true, NOW(), NOW()),
+     620000000, 620000000, 'Men', 'PUBLISHED', 'https://cdn.reverie.luxury/watches/moser-streamliner-blue-front.webp', 5.0, 19, NOW(), NOW()),
 
     -- Product 8: Cartier Privé Tank Chinoise Skeleton Platinum
-    ('p1000000-0000-0000-0000-000000000008', 'c1000000-0000-0000-0000-000000000004', 'b1000000-0000-0000-0000-000000000001',
+    ('a1000000-0000-0000-0000-000000000008', 'c1000000-0000-0000-0000-000000000004', 'b1000000-0000-0000-0000-000000000001',
      'Cartier Privé Tank Chinoise Skeleton Limited Edition', 'cartier-prive-tank-chinoise-skeleton-platinum', 'WHTA0016',
+     'Numbered limited edition in 950 platinum with lacquer portico dial.',
      'Numbered limited edition in 950 platinum with openworked red and black lacquer dial architecture inspired by traditional Chinese porticos.',
-     780000000, 'Unisex', 'PUBLISHED', true, NOW(), NOW())
+     780000000, 780000000, 'Unisex', 'PUBLISHED', 'https://cdn.reverie.luxury/watches/cartier-tank-chinoise-front.webp', 5.0, 11, NOW(), NOW())
 ON CONFLICT (slug) DO NOTHING;
 
 -- 4. Master Product Attributes
-INSERT INTO product_attributes (id, product_id, attribute_name, attribute_value, display_order)
+INSERT INTO product_attributes (id, product_id, case_diameter, thickness, case_material, movement, power_reserve, complications, dial_color, origin, warranty_months)
 VALUES
-    -- Attributes for Patek Celestial
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000001', 'Manufacture', 'Patek Philippe Geneve', 1),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000001', 'Calibre', '240 LU CL C Automatic', 2),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000001', 'Case Diameter', '44 mm', 3),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000001', 'Case Material', 'Platinum 950 (Top Wesselton Diamond set at 6 o''clock)', 4),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000001', 'Complications', 'Sky Chart, Celestial Meridian, Sirius Transit, Moon Phase, Date by Hand', 5),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000001', 'Power Reserve', '48 Hours', 6),
-
-    -- Attributes for Lange Datograph
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000002', 'Manufacture', 'A. Lange & Söhne Glashütte I/SA', 1),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000002', 'Calibre', 'L952.2 Manually Wound', 2),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000002', 'Case Diameter', '41.5 mm', 3),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000002', 'Case Material', '18K Honeygold (Lange Exclusive Alloy)', 4),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000002', 'Complications', 'Flyback Chronograph, Perpetual Calendar, One-Minute Tourbillon with Stop-Seconds, Outsize Date', 5),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000002', 'Power Reserve', '50 Hours', 6),
-
-    -- Attributes for Vacheron Armillary
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000003', 'Manufacture', 'Vacheron Constantin Geneve', 1),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000003', 'Calibre', '1990 Manual Wind Hallmarked Poinçon de Genève', 2),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000003', 'Case Diameter', '45 mm', 3),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000003', 'Case Material', '18K White Gold', 4),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000003', 'Complications', 'Bi-Axial Armillary Spherical Tourbillon, Instantaneous Double Retrograde Hours and Minutes', 5),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000003', 'Power Reserve', '65 Hours', 6),
-
-    -- Attributes for FP Journe
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000004', 'Manufacture', 'F.P. Journe Invenit et Fecit', 1),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000004', 'Calibre', '1304 18k Rose Gold Movement', 2),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000004', 'Case Diameter', '40 mm', 3),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000004', 'Case Material', 'Platinum 950', 4),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000004', 'Complications', 'Twin Barrel Chronometer, Sub-seconds, Power Reserve Indicator', 5),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000004', 'Power Reserve', '56 Hours', 6)
-ON CONFLICT DO NOTHING;
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000001', '44 mm', '10.58 mm', 'Platinum 950 (Top Wesselton Diamond set at 6 o''clock)', 'Calibre 240 LU CL C Automatic', '48 Hours', 'Sky Chart, Celestial Meridian, Sirius Transit, Moon Phase, Date by Hand', 'Deep Blue Sapphire', 'Switzerland', 24),
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000002', '41.5 mm', '14.6 mm', '18K Honeygold (Lange Exclusive Alloy)', 'Calibre L952.2 Manually Wound', '50 Hours', 'Flyback Chronograph, Perpetual Calendar, One-Minute Tourbillon, Outsize Date', 'Solid Silver Argente', 'Germany', 24),
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000003', '45 mm', '14.3 mm', '18K White Gold', 'Calibre 1990 Manual Wind Poinçon de Genève', '65 Hours', 'Bi-Axial Armillary Spherical Tourbillon, Double Retrograde Hours and Minutes', 'Anthracite Openworked', 'Switzerland', 24),
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000004', '40 mm', '8.6 mm', 'Platinum 950', 'Calibre 1304 18K Rose Gold Movement', '56 Hours', 'Twin Barrel Chronometer, Sub-seconds, Power Reserve Indicator', 'Tahitian Mother-of-Pearl', 'Switzerland', 24),
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000005', '44 mm', '16.1 mm', 'Sandblasted Titanium & Green Ceramic', 'Calibre 2954 Manual Wind', '237 Hours', 'Flying Tourbillon, GMT 24h, Crown Function Selector', 'Openworked Architecture', 'Switzerland', 24),
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000006', '44 mm', '17.5 mm', 'Zirconium Metal', 'LM Perpetual Fully Integrated Engine by Stephen McDonnell', '72 Hours', 'Mechanical Processor Perpetual Calendar, Suspended Balance, Retrograde Date', 'Atomic Blue CVD', 'Switzerland', 24),
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000007', '42.3 mm', '14.2 mm', 'Stainless Steel', 'Calibre HMC 902 AgenGraphe Automatic', '54 Hours', 'Coaxial Central Flyback Chronograph, Dynamic Water Resistance 120m', 'Funky Blue Fumé', 'Switzerland', 24),
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000008', '39.5 mm x 29.2 mm', '7.7 mm', 'Platinum 950', 'Calibre 9627 MC Manual Wind Skeleton', '38 Hours', 'Skeleton Architectural Movement, Red & Black Lacquer Accents', 'Openworked Skeleton', 'Switzerland', 24)
+ON CONFLICT (product_id) DO NOTHING;
 
 -- 5. Master Product Variants
-INSERT INTO product_variants (id, product_id, sku, name, dial_color, strap_material, price_paise, compare_at_price_paise, created_at, updated_at)
+INSERT INTO product_variants (id, product_id, sku, name, dial_color, strap_type, price_paise, sale_price_paise, status, created_at)
 VALUES
-    -- Patek Celestial Variant
-    ('v1000000-0000-0000-0000-000000000001', 'p1000000-0000-0000-0000-000000000001', 'PP-6102P-BLUE-PLT',
-     'Celestial Platinum Blue Sapphire Dial', 'Deep Blue Celestial Sapphire', 'Hand-stitched Alligator Leather Navy', 3850000000, 4100000000, NOW(), NOW()),
+    ('b2000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000001', 'PP-6102P-BLUE-PLT',
+     'Celestial Platinum Blue Sapphire Dial', 'Deep Blue Celestial Sapphire', 'Hand-stitched Alligator Leather Navy', 3850000000, 3850000000, 'ACTIVE', NOW()),
 
-    -- Lange Datograph Variant
-    ('v1000000-0000-0000-0000-000000000002', 'p1000000-0000-0000-0000-000000000002', 'ALS-740-HONEYGOLD',
-     'Datograph Perpetual Honeygold Limited 100', 'Solid Silver Argente', 'Hand-stitched Reddish-Brown Alligator', 2950000000, NULL, NOW(), NOW()),
+    ('b2000000-0000-0000-0000-000000000002', 'a1000000-0000-0000-0000-000000000002', 'ALS-740-HONEYGOLD',
+     'Datograph Perpetual Honeygold Limited 100', 'Solid Silver Argente', 'Hand-stitched Reddish-Brown Alligator', 2950000000, 2950000000, 'ACTIVE', NOW()),
 
-    -- Vacheron Armillary Variant
-    ('v1000000-0000-0000-0000-000000000003', 'p1000000-0000-0000-0000-000000000003', 'VC-9810C-WG-SKELETON',
-     'Les Cabinotiers Armillary White Gold', 'NAC Treated Anthracite Openworked', 'Dark Blue Mississippiensis Alligator', 4200000000, NULL, NOW(), NOW()),
+    ('b2000000-0000-0000-0000-000000000003', 'a1000000-0000-0000-0000-000000000003', 'VC-9810C-WG-SKELETON',
+     'Les Cabinotiers Armillary White Gold', 'NAC Treated Anthracite Openworked', 'Dark Blue Mississippiensis Alligator', 4200000000, 4200000000, 'ACTIVE', NOW()),
 
-    -- FP Journe Variant
-    ('v1000000-0000-0000-0000-000000000004', 'p1000000-0000-0000-0000-000000000004', 'FPJ-CS-PT-MOP',
-     'Chronomètre Souverain Platinum Mother-of-Pearl', 'Tahitian Natural Mother-of-Pearl', 'Semi-matte Black Alligator', 1650000000, NULL, NOW(), NOW()),
+    ('b2000000-0000-0000-0000-000000000004', 'a1000000-0000-0000-0000-000000000004', 'FPJ-CS-PT-MOP',
+     'Chronomètre Souverain Platinum Mother-of-Pearl', 'Tahitian Natural Mother-of-Pearl', 'Semi-matte Black Alligator', 1650000000, 1650000000, 'ACTIVE', NOW()),
 
-    -- Audemars Piguet Concept Variant
-    ('v1000000-0000-0000-0000-000000000005', 'p1000000-0000-0000-0000-000000000005', 'AP-26589IO-GREEN',
-     'Royal Oak Concept Flying Tourbillon Green Ceramic', 'Openworked Architecture', 'Textured Green Rubber Strap', 2250000000, NULL, NOW(), NOW()),
+    ('b2000000-0000-0000-0000-000000000005', 'a1000000-0000-0000-0000-000000000005', 'AP-26589IO-GREEN',
+     'Royal Oak Concept Flying Tourbillon Green Ceramic', 'Openworked Architecture', 'Textured Green Rubber Strap', 2250000000, 2250000000, 'ACTIVE', NOW()),
 
-    -- MB&F LM Perpetual Variant
-    ('v1000000-0000-0000-0000-000000000006', 'p1000000-0000-0000-0000-000000000006', 'MBF-07-ZR-BLUE',
-     'LM Perpetual EVO Zirconium Blue Dial', 'Atomic Blue CVD Plate', 'Integrated White FKM Rubber', 1980000000, NULL, NOW(), NOW()),
+    ('b2000000-0000-0000-0000-000000000006', 'a1000000-0000-0000-0000-000000000006', 'MBF-07-ZR-BLUE',
+     'LM Perpetual EVO Zirconium Blue Dial', 'Atomic Blue CVD Plate', 'Integrated White FKM Rubber', 1980000000, 1980000000, 'ACTIVE', NOW()),
 
-    -- H. Moser Streamliner Variant
-    ('v1000000-0000-0000-0000-000000000007', 'p1000000-0000-0000-0000-000000000007', 'HMC-6902-FUNKYBLUE',
-     'Streamliner Flyback Chronograph Funky Blue', 'Funky Blue Fumé Sunburst', 'Integrated Steel Cushion Link Bracelet', 620000000, NULL, NOW(), NOW()),
+    ('b2000000-0000-0000-0000-000000000007', 'a1000000-0000-0000-0000-000000000007', 'HMC-6902-FUNKYBLUE',
+     'Streamliner Flyback Chronograph Funky Blue', 'Funky Blue Fumé Sunburst', 'Integrated Steel Cushion Link Bracelet', 620000000, 620000000, 'ACTIVE', NOW()),
 
-    -- Cartier Prive Tank Chinoise Variant
-    ('v1000000-0000-0000-0000-000000000008', 'p1000000-0000-0000-0000-000000000008', 'CRT-WHTA0016-PLAT',
-     'Tank Chinoise Skeleton Platinum Limited 100', 'Openworked Red/Black Lacquered Portico', 'Semi-matte Grey Alligator', 780000000, NULL, NOW(), NOW())
+    ('b2000000-0000-0000-0000-000000000008', 'a1000000-0000-0000-0000-000000000008', 'CRT-WHTA0016-PLAT',
+     'Tank Chinoise Skeleton Platinum Limited 100', 'Openworked Red/Black Lacquered Portico', 'Semi-matte Grey Alligator', 780000000, 780000000, 'ACTIVE', NOW())
 ON CONFLICT (sku) DO NOTHING;
 
 -- 6. Master Product Media
-INSERT INTO product_media (id, product_id, media_url, media_type, is_primary, display_order)
+INSERT INTO product_media (id, product_id, media_type, url, alt_text, display_order, is_primary)
 VALUES
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000001', 'https://cdn.reverie.luxury/watches/patek-6102p-front.webp', 'IMAGE', true, 1),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000001', 'https://cdn.reverie.luxury/watches/patek-6102p-caseback.webp', 'IMAGE', false, 2),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000002', 'https://cdn.reverie.luxury/watches/lange-datograph-honeygold-front.webp', 'IMAGE', true, 1),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000002', 'https://cdn.reverie.luxury/watches/lange-datograph-honeygold-movement.webp', 'IMAGE', false, 2),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000003', 'https://cdn.reverie.luxury/watches/vc-cabinotiers-armillary-front.webp', 'IMAGE', true, 1),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000004', 'https://cdn.reverie.luxury/watches/fp-journe-cs-front.webp', 'IMAGE', true, 1),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000005', 'https://cdn.reverie.luxury/watches/ap-ro-concept-green-front.webp', 'IMAGE', true, 1),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000006', 'https://cdn.reverie.luxury/watches/mbf-lm-perpetual-evo-front.webp', 'IMAGE', true, 1),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000007', 'https://cdn.reverie.luxury/watches/moser-streamliner-blue-front.webp', 'IMAGE', true, 1),
-    (gen_random_uuid(), 'p1000000-0000-0000-0000-000000000008', 'https://cdn.reverie.luxury/watches/cartier-tank-chinoise-front.webp', 'IMAGE', true, 1)
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000001', 'IMAGE', 'https://cdn.reverie.luxury/watches/patek-6102p-front.webp', 'Patek Philippe Celestial 6102P Dial View', 1, true),
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000001', 'IMAGE', 'https://cdn.reverie.luxury/watches/patek-6102p-caseback.webp', 'Patek Philippe Celestial 6102P Sapphire Caseback', 2, false),
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000002', 'IMAGE', 'https://cdn.reverie.luxury/watches/lange-datograph-honeygold-front.webp', 'A. Lange & Söhne Datograph Perpetual Dial', 1, true),
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000002', 'IMAGE', 'https://cdn.reverie.luxury/watches/lange-datograph-honeygold-movement.webp', 'A. Lange & Söhne Calibre L952.2 Engraved Balance Cock', 2, false),
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000003', 'IMAGE', 'https://cdn.reverie.luxury/watches/vc-cabinotiers-armillary-front.webp', 'Vacheron Constantin Cabinotiers Armillary Tourbillon Front', 1, true),
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000004', 'IMAGE', 'https://cdn.reverie.luxury/watches/fp-journe-cs-front.webp', 'F.P. Journe Chronomètre Souverain Mother of Pearl Dial', 1, true),
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000005', 'IMAGE', 'https://cdn.reverie.luxury/watches/ap-ro-concept-green-front.webp', 'Audemars Piguet Royal Oak Concept Flying Tourbillon Front', 1, true),
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000006', 'IMAGE', 'https://cdn.reverie.luxury/watches/mbf-lm-perpetual-evo-front.webp', 'MB&F Legacy Machine Perpetual EVO Atomic Blue Dial', 1, true),
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000007', 'IMAGE', 'https://cdn.reverie.luxury/watches/moser-streamliner-blue-front.webp', 'H. Moser & Cie Streamliner Flyback Chronograph Dial', 1, true),
+    (gen_random_uuid(), 'a1000000-0000-0000-0000-000000000008', 'IMAGE', 'https://cdn.reverie.luxury/watches/cartier-tank-chinoise-front.webp', 'Cartier Privé Tank Chinoise Skeleton Dial', 1, true)
 ON CONFLICT DO NOTHING;
 
 -- 7. Master Inventories & Movement Logs
 INSERT INTO inventories (id, variant_id, available, reserved, sold, returned, low_stock_threshold)
 VALUES
-    (gen_random_uuid(), 'v1000000-0000-0000-0000-000000000001', 2, 0, 0, 0, 1),
-    (gen_random_uuid(), 'v1000000-0000-0000-0000-000000000002', 1, 0, 0, 0, 1),
-    (gen_random_uuid(), 'v1000000-0000-0000-0000-000000000003', 1, 0, 0, 0, 1),
-    (gen_random_uuid(), 'v1000000-0000-0000-0000-000000000004', 3, 0, 0, 0, 1),
-    (gen_random_uuid(), 'v1000000-0000-0000-0000-000000000005', 2, 0, 0, 0, 1),
-    (gen_random_uuid(), 'v1000000-0000-0000-0000-000000000006', 1, 0, 0, 0, 1),
-    (gen_random_uuid(), 'v1000000-0000-0000-0000-000000000007', 4, 0, 0, 0, 2),
-    (gen_random_uuid(), 'v1000000-0000-0000-0000-000000000008', 2, 0, 0, 0, 1)
+    (gen_random_uuid(), 'b2000000-0000-0000-0000-000000000001', 2, 0, 0, 0, 1),
+    (gen_random_uuid(), 'b2000000-0000-0000-0000-000000000002', 1, 0, 0, 0, 1),
+    (gen_random_uuid(), 'b2000000-0000-0000-0000-000000000003', 1, 0, 0, 0, 1),
+    (gen_random_uuid(), 'b2000000-0000-0000-0000-000000000004', 3, 0, 0, 0, 1),
+    (gen_random_uuid(), 'b2000000-0000-0000-0000-000000000005', 2, 0, 0, 0, 1),
+    (gen_random_uuid(), 'b2000000-0000-0000-0000-000000000006', 1, 0, 0, 0, 1),
+    (gen_random_uuid(), 'b2000000-0000-0000-0000-000000000007', 4, 0, 0, 0, 2),
+    (gen_random_uuid(), 'b2000000-0000-0000-0000-000000000008', 2, 0, 0, 0, 1)
 ON CONFLICT (variant_id) DO NOTHING;
 
 -- 8. Master FAQ Items

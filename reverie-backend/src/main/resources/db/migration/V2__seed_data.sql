@@ -26,7 +26,7 @@ INSERT INTO products (
     is_preorder, edition_size, max_per_customer, model_3d_url, primary_image_url, rating, reviews_count
 ) VALUES 
     (
-        'p0000000-0000-0000-0000-000000000001',
+        '10000000-0000-0000-0000-000000000001',
         'Velara Classic Royale Blue',
         'velara-classic-royale-blue',
         'V-001',
@@ -47,7 +47,7 @@ INSERT INTO products (
         86
     ),
     (
-        'p0000000-0000-0000-0000-000000000002',
+        '10000000-0000-0000-0000-000000000002',
         'Velara Classic 18k Rose Gold',
         'velara-classic-18k-rose-gold',
         'V-002',
@@ -68,7 +68,7 @@ INSERT INTO products (
         62
     ),
     (
-        'p0000000-0000-0000-0000-000000000003',
+        '10000000-0000-0000-0000-000000000003',
         'The Orion Automatic',
         'the-orion-automatic',
         'R-001',
@@ -97,19 +97,19 @@ INSERT INTO product_attributes (
 ) VALUES 
     (
         'b0000000-0000-0000-0000-000000000001',
-        'p0000000-0000-0000-0000-000000000001',
+        '10000000-0000-0000-0000-000000000001',
         '40mm', '9.8mm', '316L Stainless Steel', 'Calibre V-101 Ultra-Thin Automatic',
         '48 Hours', 'Double-domed Sapphire with Multi-AR', '50m (5 ATM)', '20mm', 'Date aperture at 6 o''clock', 'Royal Navy Sunburst', 'Switzerland', 24
     ),
     (
         'b0000000-0000-0000-0000-000000000002',
-        'p0000000-0000-0000-0000-000000000002',
+        '10000000-0000-0000-0000-000000000002',
         '39mm', '9.5mm', '18k 5N Rose Gold Plated Steel', 'Calibre V-102 Automatic',
         '48 Hours', 'Domed Sapphire Crystal', '50m (5 ATM)', '20mm', 'Small Seconds Subdial', 'Champagne Sunburst', 'Switzerland', 24
     ),
     (
         'b0000000-0000-0000-0000-000000000003',
-        'p0000000-0000-0000-0000-000000000003',
+        '10000000-0000-0000-0000-000000000003',
         '41mm', '10.2mm', '316L Marine Grade Steel', 'Calibre R-200 Swiss Automatic',
         '48 Hours', 'Sapphire with Anti-Reflective Coating', '100m (10 ATM)', '20mm', 'Center sweep seconds', 'Midnight Navy', 'Switzerland', 36
     )
@@ -118,19 +118,19 @@ ON CONFLICT (id) DO NOTHING;
 -- 5. Seed Variants
 INSERT INTO product_variants (id, product_id, sku, name, dial_color, strap_type, price_paise, sale_price_paise, status)
 VALUES 
-    ('v0000000-0000-0000-0000-000000000001', 'p0000000-0000-0000-0000-000000000001', 'REV-V001-STEEL', 'Velara Royale Blue / Steel Bracelet', 'Royal Navy', 'Steel Bracelet', 12500000, NULL, 'ACTIVE'),
-    ('v0000000-0000-0000-0000-000000000002', 'p0000000-0000-0000-0000-000000000001', 'REV-V001-LTHR', 'Velara Royale Blue / Alligator Leather', 'Royal Navy', 'Alligator Leather', 12500000, NULL, 'ACTIVE'),
-    ('v0000000-0000-0000-0000-000000000003', 'p0000000-0000-0000-0000-000000000002', 'REV-V002-LTHR', 'Velara 18k Rose Gold / Dark Leather', 'Champagne', 'Dark Leather', 14500000, NULL, 'ACTIVE'),
-    ('v0000000-0000-0000-0000-000000000004', 'p0000000-0000-0000-0000-000000000003', 'REV-R001-NAVY', 'The Orion / Midnight Navy Bracelet', 'Midnight Navy', 'Steel Bracelet', 12990000, NULL, 'ACTIVE')
+    ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'REV-V001-STEEL', 'Velara Royale Blue / Steel Bracelet', 'Royal Navy', 'Steel Bracelet', 12500000, NULL, 'ACTIVE'),
+    ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', 'REV-V001-LTHR', 'Velara Royale Blue / Alligator Leather', 'Royal Navy', 'Alligator Leather', 12500000, NULL, 'ACTIVE'),
+    ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000002', 'REV-V002-LTHR', 'Velara 18k Rose Gold / Dark Leather', 'Champagne', 'Dark Leather', 14500000, NULL, 'ACTIVE'),
+    ('20000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000003', 'REV-R001-NAVY', 'The Orion / Midnight Navy Bracelet', 'Midnight Navy', 'Steel Bracelet', 12990000, NULL, 'ACTIVE')
 ON CONFLICT (id) DO NOTHING;
 
 -- 6. Seed Variant Inventory
 INSERT INTO inventories (id, variant_id, available, reserved, sold, returned, low_stock_threshold, version)
 VALUES 
-    ('i0000000-0000-0000-0000-000000000001', 'v0000000-0000-0000-0000-000000000001', 15, 0, 0, 0, 3, 0),
-    ('i0000000-0000-0000-0000-000000000002', 'v0000000-0000-0000-0000-000000000002', 8, 0, 0, 0, 3, 0),
-    ('i0000000-0000-0000-0000-000000000003', 'v0000000-0000-0000-0000-000000000003', 5, 0, 0, 0, 2, 0),
-    ('i0000000-0000-0000-0000-000000000004', 'v0000000-0000-0000-0000-000000000004', 20, 0, 0, 0, 5, 0)
+    ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 15, 0, 0, 0, 3, 0),
+    ('30000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 8, 0, 0, 0, 3, 0),
+    ('30000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000003', 5, 0, 0, 0, 2, 0),
+    ('30000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000004', 20, 0, 0, 0, 5, 0)
 ON CONFLICT (id) DO NOTHING;
 
 -- 7. Seed Initial Test Users
@@ -138,7 +138,7 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO users (id, email, password_hash, first_name, last_name, role, is_active, is_verified)
 VALUES 
     (
-        'u0000000-0000-0000-0000-000000000001',
+        '40000000-0000-0000-0000-000000000001',
         'admin@reverie.app',
         '$2a$10$7Q7xQeGvhj9.dF5qA4v2t.Gf889Q/N0q0jL8g.jPzC8x8e5Vj8vYm',
         'Master',
@@ -148,7 +148,7 @@ VALUES
         TRUE
     ),
     (
-        'u0000000-0000-0000-0000-000000000002',
+        '40000000-0000-0000-0000-000000000002',
         'client@reverie.app',
         '$2a$10$7Q7xQeGvhj9.dF5qA4v2t.Gf889Q/N0q0jL8g.jPzC8x8e5Vj8vYm',
         'Alexander',
@@ -164,12 +164,4 @@ INSERT INTO coupons (id, code, discount_type, discount_value, min_order_paise, m
 VALUES 
     ('d0000000-0000-0000-0000-000000000001', 'HOROLOGY10', 'PERCENT', 10.00, 5000000, 2000000, 1000, 0, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '365 days'),
     ('d0000000-0000-0000-0000-000000000002', 'VELARA5000', 'FLAT', 500000.00, 10000000, 500000, 500, 0, TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '180 days')
-ON CONFLICT (id) DO NOTHING;
-
--- 9. Seed FAQs
-INSERT INTO faqs (id, question, answer, category, display_order)
-VALUES 
-    ('f0000000-0000-0000-0000-000000000001', 'How do I care for my REVERIE mechanical timepiece?', 'Wipe your timepiece with a microfiber cloth regularly. For automatic calibres, maintain power by wearing daily or storing in a winder.', 'Care & Servicing', 1),
-    ('f0000000-0000-0000-0000-000000000002', 'What does the 24-month international warranty cover?', 'The warranty covers internal movement defects, timing accuracy aberrations, and manufacturing flaws. It does not cover strap wear or water damage beyond specified ATM limits.', 'Warranty', 2),
-    ('f0000000-0000-0000-0000-000000000003', 'Are all shipments fully insured?', 'Yes, every REVERIE watch is shipped via specialized express courier with tamper-evident security sealing and 100% declared-value insurance.', 'Shipping', 3)
 ON CONFLICT (id) DO NOTHING;
