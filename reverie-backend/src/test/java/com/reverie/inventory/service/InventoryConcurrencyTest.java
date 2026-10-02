@@ -45,14 +45,14 @@ public class InventoryConcurrencyTest {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private com.reverie.testutil.TestDataCleaner testDataCleaner;
+
     private ProductVariant testVariant;
 
     @BeforeEach
     void setUp() {
-        movementRepository.deleteAll();
-        inventoryRepository.deleteAll();
-        variantRepository.deleteAll();
-        productRepository.deleteAll();
+        testDataCleaner.cleanAll();
 
         Product product = new Product();
         product.setName("Limited Edition Chrono");

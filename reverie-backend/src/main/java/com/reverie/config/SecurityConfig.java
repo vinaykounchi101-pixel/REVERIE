@@ -48,9 +48,10 @@ public class SecurityConfig {
                     "/v3/api-docs/**"
                 ).permitAll()
 
-                // Public Auth & Webhooks
+                // Public Auth, Webhooks & Cart
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/webhooks/**").permitAll()
+                .requestMatchers("/api/cart/**").permitAll()
 
                 // Public Read-Only Catalog & Content
                 .requestMatchers(HttpMethod.GET,

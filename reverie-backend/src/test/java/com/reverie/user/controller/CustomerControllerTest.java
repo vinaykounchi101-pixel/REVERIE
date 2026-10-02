@@ -41,9 +41,12 @@ public class CustomerControllerTest {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
+    @Autowired
+    private com.reverie.testutil.TestDataCleaner testDataCleaner;
+
     @BeforeEach
     void setUp() {
-        userRepository.deleteAll();
+        testDataCleaner.cleanAll();
     }
 
     @Test

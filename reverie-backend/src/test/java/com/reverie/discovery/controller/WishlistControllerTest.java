@@ -60,12 +60,12 @@ public class WishlistControllerTest {
     private Product testProduct;
     private String jwtToken;
 
+    @Autowired
+    private com.reverie.testutil.TestDataCleaner testDataCleaner;
+
     @BeforeEach
     void setUp() {
-        wishlistItemRepository.deleteAll();
-        wishlistRepository.deleteAll();
-        productRepository.deleteAll();
-        userRepository.deleteAll();
+        testDataCleaner.cleanAll();
 
         testUser = new User("wishlist@reverie.app", passwordEncoder.encode("Password@123"), "Wish", "User", null, Role.CUSTOMER);
         testUser = userRepository.save(testUser);

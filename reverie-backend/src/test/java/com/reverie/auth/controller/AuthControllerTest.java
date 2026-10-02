@@ -53,11 +53,12 @@ public class AuthControllerTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private com.reverie.testutil.TestDataCleaner testDataCleaner;
+
     @BeforeEach
     void setUp() {
-        refreshTokenRepository.deleteAll();
-        otpTokenRepository.deleteAll();
-        userRepository.deleteAll();
+        testDataCleaner.cleanAll();
     }
 
     @Test

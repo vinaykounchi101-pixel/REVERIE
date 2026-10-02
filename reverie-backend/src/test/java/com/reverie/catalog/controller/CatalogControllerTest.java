@@ -41,12 +41,12 @@ public class CatalogControllerTest {
     @Autowired
     private InventoryRepository inventoryRepository;
 
+    @Autowired
+    private com.reverie.testutil.TestDataCleaner testDataCleaner;
+
     @BeforeEach
     void setUp() {
-        inventoryRepository.deleteAll();
-        productRepository.deleteAll();
-        categoryRepository.deleteAll();
-        collectionRepository.deleteAll();
+        testDataCleaner.cleanAll();
 
         Category category = new Category("Classic", "classic", "Timeless watches", 1);
         category = categoryRepository.save(category);
