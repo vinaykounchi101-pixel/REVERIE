@@ -60,6 +60,7 @@ public class SecurityConfig {
                     "/api/collections/**",
                     "/api/search/**",
                     "/api/faqs/**",
+                    "/api/stories/**",
                     "/api/reviews/product/**"
                 ).permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/concierge/book").permitAll()
