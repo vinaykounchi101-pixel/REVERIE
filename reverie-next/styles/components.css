@@ -1389,7 +1389,156 @@
 }
 
 /* --------------------------------------------------------------------------
-   Responsive Breakpoints for Homepage Feature Sections
+   Site Footer (Atmospheric Dark Horological Prestige)
+   -------------------------------------------------------------------------- */
+
+.site-footer {
+  background-color: var(--color-dark-bg);
+  color: var(--color-dark-text-primary);
+  border-top: 1px solid var(--color-dark-border-subtle);
+  padding: var(--space-20) 0 var(--space-10);
+  position: relative;
+  overflow: hidden;
+}
+
+.footer-top {
+  display: grid;
+  grid-template-columns: 1.3fr 2fr;
+  gap: var(--space-16);
+  align-items: start;
+  margin-bottom: var(--space-16);
+}
+
+.footer-brand-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.footer-logo {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.38em;
+  color: var(--color-white);
+  text-transform: uppercase;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  transition: opacity var(--motion-fast);
+}
+
+.footer-logo:hover {
+  opacity: 0.8;
+}
+
+.footer-tagline {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--color-dark-text-secondary);
+  max-width: 320px;
+}
+
+.footer-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5, 10px);
+  font-size: 11.5px;
+  color: var(--color-dark-text-muted);
+  letter-spacing: 0.06em;
+  margin-top: var(--space-2);
+}
+
+.footer-meta-divider {
+  color: var(--color-warm-400);
+  font-size: 8px;
+}
+
+.footer-nav-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-10);
+}
+
+.footer-nav-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.footer-col-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-warm-300);
+  margin-bottom: var(--space-5);
+}
+
+.footer-col-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.footer-link {
+  font-size: 13px;
+  color: var(--color-dark-text-secondary);
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--motion-fast), transform var(--motion-fast);
+  display: inline-block;
+}
+
+.footer-link:hover {
+  color: var(--color-white);
+  transform: translateX(2px);
+}
+
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--color-dark-border-subtle);
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.footer-copyright {
+  font-size: 12px;
+  color: var(--color-dark-text-muted);
+}
+
+.footer-legal {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.footer-legal-link {
+  font-size: 12px;
+  color: var(--color-dark-text-muted);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color var(--motion-fast);
+}
+
+.footer-legal-link:hover {
+  color: var(--color-dark-text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints for Homepage Feature Sections & Footer
    -------------------------------------------------------------------------- */
 
 @media (max-width: 1024px) {
@@ -1406,6 +1555,10 @@
   .threed-container {
     grid-template-columns: 1fr;
     gap: var(--space-8);
+  }
+  .footer-top {
+    grid-template-columns: 1fr;
+    gap: var(--space-10);
   }
 }
 
@@ -1446,7 +1599,24 @@
     justify-content: center;
     width: 90%;
   }
+  .site-footer {
+    padding: var(--space-14) 0 var(--space-8);
+  }
+  .footer-nav-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+  .footer-legal {
+    flex-wrap: wrap;
+    gap: var(--space-4);
+  }
 }
+
 
 
 

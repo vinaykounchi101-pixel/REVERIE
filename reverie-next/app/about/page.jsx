@@ -3,11 +3,11 @@ import Link from 'next/link';
 import Button from '../../components/ui/Button';
 
 export const metadata = {
-  title: 'Brand Story & Atelier Heritage | REVERIE Horology',
-  description: 'Discover the heritage, master watchmakers, and horological philosophy of REVERIE in Gen�ve, Switzerland.',
+  title: 'About REVERIE | Swiss Haute Horlogerie',
+  description: 'Discover the heritage, master watchmakers, and horological philosophy of REVERIE in Genève, Switzerland.',
 };
 
-export default function BrandStoryPage() {
+export default function AboutPage() {
   return (
     <div className="page-story">
       {/* Editorial Hero */}
@@ -22,7 +22,7 @@ export default function BrandStoryPage() {
             More than a watch.<br />A legacy on your wrist.
           </h1>
           <p className="story-hero-subtitle font-ui">
-            Crafted in Gen�ve with uncompromising devotion to chronometric precision and aesthetic restraint.
+            Crafted in Genève with uncompromising devotion to chronometric precision and aesthetic restraint.
           </p>
         </div>
       </section>
@@ -46,49 +46,64 @@ export default function BrandStoryPage() {
         </div>
       </section>
 
-      {/* Chapter 2: The Atelier */}
-      <section className="story-atelier-section">
+      {/* Chapter 2: The Movement & Craft */}
+      <section className="story-chapter-dark">
         <div className="container story-chapter-grid story-chapter-grid--reverse">
           <div className="story-chapter-text">
-            <span className="eyebrow font-ui">CHAPTER II</span>
-            <h2 className="story-chapter-title font-display">Handcrafted in Gen�ve</h2>
-            <p className="story-chapter-para font-ui">
-              Every REVERIE caliber undergoes hundreds of hours of manual finishing: C�tes de Gen�ve stripes, circular graining (perlage), and diamond-polished sinks.
+            <span className="eyebrow eyebrow-dark font-ui">CHAPTER II</span>
+            <h2 className="story-chapter-title font-display" style={{ color: 'var(--color-dark-text-primary)' }}>
+              Swiss Precision in Every Caliber
+            </h2>
+            <p className="story-chapter-para font-ui" style={{ color: 'var(--color-dark-text-secondary)' }}>
+              Every REVERIE timepiece houses an automatic movement adjusted in five positions to chronometer tolerances. 
+              Our calibers feature bespoke tungsten oscillating weights, Glucydur balance wheels, and Nivaflex mainsprings guaranteeing up to 70 hours of uninterrupted power reserve.
             </p>
-            <p className="story-chapter-para font-ui">
-              Regulated in 5 distinct positions and across 3 temperatures, each timepiece is certified to exceed stringent chronometer standards before leaving our atelier.
-            </p>
-            <div className="story-stats-grid font-ui">
-              <div className="story-stat-card">
-                <span className="story-stat-val font-display">300+</span>
-                <span className="story-stat-lbl">Individual Caliber Parts</span>
+            <div className="story-metrics-row font-ui">
+              <div className="story-metric">
+                <span className="story-metric-val">70h</span>
+                <span className="story-metric-lbl">Power Reserve</span>
               </div>
-              <div className="story-stat-card">
-                <span className="story-stat-val font-display">120h</span>
-                <span className="story-stat-lbl">Hand Polishing & Assembly</span>
+              <div className="story-metric">
+                <span className="story-metric-val">28,800</span>
+                <span className="story-metric-lbl">Vibrations / Hour</span>
               </div>
-              <div className="story-stat-card">
-                <span className="story-stat-val font-display">5-Year</span>
-                <span className="story-stat-lbl">Atelier Warranty</span>
+              <div className="story-metric">
+                <span className="story-metric-val">-2/+2s</span>
+                <span className="story-metric-lbl">Daily Tolerance</span>
               </div>
             </div>
           </div>
           <div className="story-chapter-image-wrap">
-            <img src="/assets/hero-watch.jpg" alt="Atelier movement assembly" className="story-chapter-img" />
+            <img src="/assets/craft-movement.jpg" alt="Mechanical Movement" className="story-chapter-img" />
           </div>
         </div>
       </section>
 
-      {/* Heritage Quote */}
-      <section className="container story-quote-section">
-        <blockquote className="story-blockquote font-display">
-          �True luxury is not about excess � it is the quiet confidence of absolute perfection.�
-        </blockquote>
-        <cite className="story-cite font-ui">� Master Horologist, REVERIE Manufacture</cite>
-        <div className="story-cta-wrap">
-          <Button variant="primary" href="/collections" arrow>
-            Explore The Timepieces
-          </Button>
+      {/* Photo Journal & Call to Action */}
+      <section className="container story-gallery-section">
+        <div className="story-gallery-header">
+          <h2 className="font-display" style={{ fontSize: '36px' }}>The Atelier Gallery</h2>
+          <p className="font-ui" style={{ color: 'var(--color-stone-500)', marginTop: '8px' }}>
+            Moments captured inside our manufacture workshops in Geneva.
+          </p>
+        </div>
+
+        <div className="story-gallery-grid">
+          <img src="/assets/craft-crown.jpg" alt="Crown machining" className="story-gallery-img" />
+          <img src="/assets/craft-crystal.jpg" alt="Sapphire crystal fitting" className="story-gallery-img" />
+          <img src="/assets/hero-watch.jpg" alt="Final quality assembly" className="story-gallery-img" />
+        </div>
+
+        <div className="story-cta-box">
+          <h3 className="font-display" style={{ fontSize: '32px', marginBottom: '12px' }}>Experience REVERIE on Your Wrist</h3>
+          <p className="font-ui" style={{ color: 'var(--color-stone-500)', marginBottom: '24px' }}>
+            Explore our curated collections of Swiss luxury timepieces.
+          </p>
+          <Link href="/collections">
+            <Button variant="primary" arrow>
+              Explore All Collections
+            </Button>
+          </Link>
         </div>
       </section>
     </div>
