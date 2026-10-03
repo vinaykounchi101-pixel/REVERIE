@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "buildCommand": "cd reverie-next && npm install && npm run build",
-  "outputDirectory": "reverie-next/.next"
+  "framework": "vite",
+  "buildCommand": "cd prototype && npm install && npm run build",
+  "outputDirectory": "prototype/dist"
 }

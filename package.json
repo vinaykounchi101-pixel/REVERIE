@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd reverie-next && npm install && npm run build",
-    "dev": "cd reverie-next && npm run dev",
-    "start": "cd reverie-next && npm run start"
+    "build": "cd prototype && npm install && npm run build",
+    "dev": "cd prototype && npm run dev",
+    "start": "cd prototype && npm run preview"
   }
 }

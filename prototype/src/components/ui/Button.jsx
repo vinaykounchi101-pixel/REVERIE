@@ -1,7 +1,4 @@
-"use client";
-
 import React from 'react';
-import Link from 'next/link';
 
 export default function Button({
   children,
@@ -41,13 +38,13 @@ export default function Button({
 
   if (href) {
     return (
-      <Link
+      <a
         href={href}
         className={combinedClass}
         {...props}
       >
         {content}
-      </Link>
+      </a>
     );
   }
 
