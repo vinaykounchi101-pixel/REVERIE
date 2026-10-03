@@ -73,6 +73,15 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.message("Email verified successfully."));
     }
 
+    @PostMapping("/resend-otp")
+    @Operation(summary = "Resend Verification or Reset OTP", description = "Dispatches a new single-use 6-digit verification code to the registered email.")
+    public ResponseEntity<ApiResponse<Void>> resendOtp(
+            @Valid @RequestBody ResendOtpRequest request,
+            HttpServletRequest httpRequest) {
+        authService.resendOtp(request, httpRequest);
+        return ResponseEntity.ok(ApiResponse.message("If an account exists, a new verification code has been dispatched."));
+    }
+
     @PostMapping("/forgot-password")
     @Operation(summary = "Request Password Reset", description = "Generates a time-limited password reset OTP token.")
     public ResponseEntity<ApiResponse<Void>> forgotPassword(

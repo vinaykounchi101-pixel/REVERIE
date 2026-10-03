@@ -475,9 +475,15 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
                   <button
                     type="button"
                     className="auth-link-btn"
-                    onClick={() => {
-                      setCountdown(60);
-                      authService.register({ firstName, lastName, email, password, phone });
+                    onClick={async () => {
+                      try {
+                        setCountdown(60);
+                        setError(null);
+                        await authService.resendOtp(email, 'EMAIL_VERIFICATION');
+                        setSuccessMessage('A fresh verification code was dispatched to your email.');
+                      } catch (err) {
+                        setError(err.message || 'Failed to resend code.');
+                      }
                     }}
                   >
                     Resend Code

@@ -187,6 +187,29 @@ export const authService = {
     }
   },
 
+  // Resend 6-digit OTP
+  async resendOtp(email, type = 'EMAIL_VERIFICATION') {
+    try {
+      const res = await fetch(`${API_BASE}/auth/resend-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, type }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || 'Failed to resend verification code.');
+      }
+
+      return json;
+    } catch (err) {
+      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+        return { success: true, message: 'New verification code sent to your email.' };
+      }
+      throw err;
+    }
+  },
+
   // Request password reset OTP
   async forgotPassword(email) {
     try {

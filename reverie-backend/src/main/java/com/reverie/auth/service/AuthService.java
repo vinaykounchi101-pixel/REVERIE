@@ -41,6 +41,7 @@ public class AuthService {
     private final JwtTokenProvider tokenProvider;
     private final RateLimiterService rateLimiterService;
     private final AuditService auditService;
+    private final EmailService emailService;
 
     @Value("${app.auth.access-token-expiration-seconds:900}")
     private long jwtExpirationSeconds;
@@ -61,7 +62,8 @@ public class AuthService {
             PasswordEncoder passwordEncoder,
             JwtTokenProvider tokenProvider,
             RateLimiterService rateLimiterService,
-            AuditService auditService) {
+            AuditService auditService,
+            EmailService emailService) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.otpTokenRepository = otpTokenRepository;
@@ -69,6 +71,7 @@ public class AuthService {
         this.tokenProvider = tokenProvider;
         this.rateLimiterService = rateLimiterService;
         this.auditService = auditService;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -289,6 +292,17 @@ public class AuthService {
         return new AuthResponse(accessToken, rawRefreshToken, jwtExpirationSeconds, UserDto.fromEntity(user));
     }
 
+    @Transactional
+    public void resendOtp(ResendOtpRequest request, HttpServletRequest httpRequest) {
+        String email = request.getEmail().toLowerCase().trim();
+        String type = (request.getType() != null && !request.getType().isBlank()) ? request.getType() : "EMAIL_VERIFICATION";
+
+        userRepository.findByEmail(email).ifPresent(user -> {
+            generateAndSaveOtp(user, email, type);
+            auditService.logAction("CUSTOMER", user.getId(), "OTP_RESENT", "USER", user.getId(), "SUCCESS", getClientIp(httpRequest), null);
+        });
+    }
+
     private void generateAndSaveOtp(User user, String identifier, String type) {
         String rawOtp = String.format("%06d", secureRandom.nextInt(1_000_000));
         String otpHash = JwtTokenProvider.hashToken(rawOtp);
@@ -297,8 +311,15 @@ public class AuthService {
         OtpToken otpToken = new OtpToken(user, identifier, otpHash, type, expiresAt);
         otpTokenRepository.save(otpToken);
 
-        // In dev/local mode log the OTP for ease of local testing without live email server
-        log.info("[DEVELOPMENT NOTIFICATION] Generated {} OTP for {}: {}", type, identifier, rawOtp);
+        // Transmit luxury branded email via configured SMTP (Gmail)
+        String recipientName = user != null ? user.getFirstName() : null;
+        if ("EMAIL_VERIFICATION".equalsIgnoreCase(type)) {
+            emailService.sendEmailVerificationOtp(identifier, recipientName, rawOtp);
+        } else if ("PASSWORD_RESET".equalsIgnoreCase(type)) {
+            emailService.sendPasswordResetOtp(identifier, recipientName, rawOtp);
+        }
+
+        log.info("[NOTIFICATION DISPATCH] Generated {} OTP for {}: {}", type, identifier, rawOtp);
     }
 
     private String getClientIp(HttpServletRequest request) {
