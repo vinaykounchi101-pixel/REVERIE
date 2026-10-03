@@ -1,0 +1,10 @@
+{
+  "name": "reverie-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd reverie-next && npm install && npm run build",
+    "dev": "cd reverie-next && npm run dev",
+    "start": "cd reverie-next && npm run start"
+  }
+}
