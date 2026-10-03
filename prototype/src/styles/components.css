@@ -1617,6 +1617,323 @@
   }
 }
 
+/* --------------------------------------------------------------------------
+   Luxury Authentication Modal & Client Identification
+   -------------------------------------------------------------------------- */
+
+.auth-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.auth-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  padding: var(--space-8);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.auth-modal-close {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: none;
+  border: none;
+  color: var(--color-stone-400);
+  cursor: pointer;
+  transition: all var(--motion-fast);
+}
+
+.auth-modal-close:hover {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.auth-modal-header {
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.auth-modal-eyebrow {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--color-warm-400);
+  margin-bottom: var(--space-2);
+}
+
+.auth-modal-title {
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+  line-height: 1.15;
+}
+
+.auth-modal-subtitle {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.auth-alert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5, 10px);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  margin-bottom: var(--space-4);
+  line-height: 1.4;
+}
+
+.auth-alert--error {
+  background-color: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  color: #ef4444;
+}
+
+.auth-alert--success {
+  background-color: rgba(22, 163, 74, 0.08);
+  border: 1px solid rgba(22, 163, 74, 0.25);
+  color: #22c55e;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--color-text-primary);
+}
+
+.form-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--color-stone-400);
+  pointer-events: none;
+}
+
+.input-with-icon input,
+.form-group input {
+  width: 100%;
+  height: 44px;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  padding: 0 14px;
+  font-size: 13.5px;
+  color: var(--color-text-primary);
+  transition: all var(--motion-fast);
+}
+
+.input-with-icon input {
+  padding-left: 42px;
+}
+
+.input-with-icon input:focus,
+.form-group input:focus {
+  outline: none;
+  border-color: var(--color-warm-400);
+  background-color: var(--color-bg-primary);
+  box-shadow: 0 0 0 1px var(--color-warm-400);
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.form-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2-5, 10px);
+  margin-top: var(--space-1);
+}
+
+.form-checkbox-row input {
+  margin-top: 3px;
+  accent-color: var(--color-stone-800);
+  cursor: pointer;
+}
+
+.form-checkbox-row label {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.auth-submit-wrap {
+  margin-top: var(--space-2);
+}
+
+.auth-submit-btn {
+  width: 100%;
+  height: 44px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.auth-switch-footer {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border-subtle);
+  margin-top: var(--space-2);
+}
+
+.auth-switch-link {
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  transition: color var(--motion-fast);
+}
+
+.auth-switch-link:hover {
+  color: var(--color-warm-400);
+}
+
+.auth-link-btn {
+  background: none;
+  border: none;
+  color: var(--color-warm-400);
+  font-size: 11.5px;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity var(--motion-fast);
+}
+
+.auth-link-btn:hover {
+  opacity: 0.8;
+}
+
+.auth-admin-switch {
+  margin-top: var(--space-3);
+}
+
+.auth-link-muted {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--color-stone-400);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: all var(--motion-fast);
+}
+
+.auth-link-muted:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-tertiary);
+}
+
+/* 6-Digit OTP Box Grid */
+.otp-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  margin: var(--space-2) 0;
+}
+
+.otp-inputs-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2-5, 10px);
+}
+
+.otp-digit-input {
+  width: 48px;
+  height: 54px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  transition: all var(--motion-fast);
+}
+
+.otp-digit-input:focus {
+  outline: none;
+  border-color: var(--color-warm-400);
+  background-color: var(--color-bg-primary);
+  box-shadow: 0 0 0 2px var(--color-warm-400);
+}
+
+.otp-expiry-note {
+  font-size: 12px;
+  color: var(--color-stone-400);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+
 
 
 

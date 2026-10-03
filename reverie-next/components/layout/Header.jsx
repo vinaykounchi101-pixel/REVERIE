@@ -6,14 +6,25 @@ import { usePathname } from 'next/navigation';
 import { Search, User, ShoppingBag, Menu, X } from 'lucide-react';
 import IconButton from '../ui/IconButton';
 import { useCart } from '../../context/CartContext';
+import { authService } from '../../services/authService';
 
 export default function Header() {
   const pathname = usePathname();
   const { totalCartCount } = useCart();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const isDarkTop = pathname === '/' && !isScrolled;
+
+  useEffect(() => {
+    setCurrentUser(authService.getCurrentUser());
+    const handleAuthChange = () => {
+      setCurrentUser(authService.getCurrentUser());
+    };
+    window.addEventListener('reverie_auth_change', handleAuthChange);
+    return () => window.removeEventListener('reverie_auth_change', handleAuthChange);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -48,6 +59,10 @@ export default function Header() {
     { label: 'Track Order', href: '/order-tracking' },
     { label: 'Support', href: '/support' },
   ];
+
+  const userInitials = currentUser
+    ? `${(currentUser.firstName || 'C')[0]}${(currentUser.lastName || 'M')[0]}`.toUpperCase()
+    : null;
 
   return (
     <>
@@ -96,13 +111,43 @@ export default function Header() {
                 variant={isDarkTop ? 'light' : 'dark'}
               />
             </Link>
-            <Link href="/account" aria-label="My Account" className="desktop-only">
-              <IconButton
-                icon={<User size={18} strokeWidth={1.5} />}
-                label="My Account"
-                variant={isDarkTop ? 'light' : 'dark'}
-              />
-            </Link>
+
+            {currentUser ? (
+              <Link href="/account" aria-label="My Account" className="desktop-only">
+                <button
+                  type="button"
+                  className="header-user-btn font-ui"
+                  title={`Logged in as ${currentUser.firstName} ${currentUser.lastName}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: 'var(--radius-full)',
+                    backgroundColor: 'var(--color-warm-400)',
+                    color: 'var(--color-black-900)',
+                    fontWeight: 600,
+                    fontSize: '11px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    marginLeft: '4px',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+                  }}
+                >
+                  {userInitials}
+                </button>
+              </Link>
+            ) : (
+              <Link href="/account" aria-label="My Account" className="desktop-only">
+                <IconButton
+                  icon={<User size={18} strokeWidth={1.5} />}
+                  label="Sign In / Register"
+                  variant={isDarkTop ? 'light' : 'dark'}
+                />
+              </Link>
+            )}
+
             <Link href="/cart" aria-label="Shopping Bag">
               <IconButton
                 icon={<ShoppingBag size={18} strokeWidth={1.5} />}
@@ -170,7 +215,7 @@ export default function Header() {
                 >
                   <span>{item.label}</span>
                   <span className="mobile-nav-arrow" aria-hidden="true">
-                    ?
+                    →
                   </span>
                 </Link>
               </li>
@@ -185,10 +230,10 @@ export default function Header() {
             onClick={() => setMobileMenuOpen(false)}
           >
             <User size={16} strokeWidth={1.5} />
-            <span>Sign In / Account</span>
+            <span>{currentUser ? `${currentUser.firstName} (${currentUser.role || 'Member'})` : 'Sign In / Register'}</span>
           </Link>
           <p className="mobile-drawer-meta font-ui">
-            Swiss Precision � Haute Horlogerie
+            Swiss Precision • Haute Horlogerie
           </p>
         </div>
       </aside>

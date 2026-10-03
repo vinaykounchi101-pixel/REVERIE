@@ -1,13 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Search, User, ShoppingBag, Menu, X } from 'lucide-react';
+import { Search, User, ShoppingBag, Menu, X, LogIn } from 'lucide-react';
+import { authService } from '../../services/authService';
+import AuthModal from '../auth/AuthModal';
 import IconButton from '../ui/IconButton';
 
 export default function Header({ cartCount = 0, currentPage = 'home', onNavigate }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // In dark-themed views or when at the top of homepage, show light text
   const isDarkTop = currentPage === 'home' && !isScrolled;
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setCurrentUser(authService.getCurrentUser());
+    };
+    window.addEventListener('reverie_auth_change', handleAuthChange);
+    return () => window.removeEventListener('reverie_auth_change', handleAuthChange);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,6 +65,10 @@ export default function Header({ cartCount = 0, currentPage = 'home', onNavigate
       }
     }
   };
+
+  const userInitials = currentUser
+    ? `${(currentUser.firstName || 'C')[0]}${(currentUser.lastName || 'M')[0]}`.toUpperCase()
+    : null;
 
   return (
     <>
@@ -101,13 +117,43 @@ export default function Header({ cartCount = 0, currentPage = 'home', onNavigate
               variant={isDarkTop ? 'light' : 'dark'}
               onClick={() => handleNav({ page: 'collections', gender: 'All' })}
             />
-            <IconButton
-              icon={<User size={18} strokeWidth={1.5} />}
-              label="My Account"
-              variant={isDarkTop ? 'light' : 'dark'}
-              className="desktop-only"
-              onClick={() => handleNav('account')}
-            />
+
+            {/* Account / User Button with Authenticated Indicator */}
+            {currentUser ? (
+              <button
+                type="button"
+                className="header-user-btn font-ui"
+                title={`Logged in as ${currentUser.firstName} ${currentUser.lastName}`}
+                onClick={() => handleNav('account')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: 'var(--radius-full)',
+                  backgroundColor: 'var(--color-warm-400)',
+                  color: 'var(--color-black-900)',
+                  fontWeight: 600,
+                  fontSize: '11px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  marginLeft: '4px',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+                }}
+              >
+                {userInitials}
+              </button>
+            ) : (
+              <IconButton
+                icon={<User size={18} strokeWidth={1.5} />}
+                label="Sign In / Register"
+                variant={isDarkTop ? 'light' : 'dark'}
+                className="desktop-only"
+                onClick={() => handleNav('account')}
+              />
+            )}
+
             <IconButton
               icon={<ShoppingBag size={18} strokeWidth={1.5} />}
               label="Shopping Bag"
@@ -152,7 +198,7 @@ export default function Header({ cartCount = 0, currentPage = 'home', onNavigate
         aria-label="Mobile Navigation"
       >
         <div className="mobile-drawer-header">
-          <span className="brand-wordmark font-ui">V E L A R A</span>
+          <span className="brand-wordmark font-ui">R E V E R I E</span>
           <button
             type="button"
             className="mobile-drawer-close"
@@ -187,17 +233,24 @@ export default function Header({ cartCount = 0, currentPage = 'home', onNavigate
           <button
             type="button"
             className="mobile-drawer-account font-ui"
-            style={{ width: '100%', background: 'none', border: 'none' }}
+            style={{ width: '100%', background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}
             onClick={() => handleNav('account')}
           >
             <User size={16} strokeWidth={1.5} />
-            <span>Sign In / Account</span>
+            <span>{currentUser ? `${currentUser.firstName} (${currentUser.role || 'Member'})` : 'Sign In / Register'}</span>
           </button>
           <p className="mobile-drawer-meta font-ui">
             Swiss Precision • Est. 2026
           </p>
         </div>
       </aside>
+
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onAuthSuccess={(user) => setCurrentUser(user)}
+      />
     </>
   );
 }
+
