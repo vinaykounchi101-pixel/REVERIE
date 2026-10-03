@@ -881,4 +881,572 @@
   }
 }
 
+/* --------------------------------------------------------------------------
+   General Eyebrow Typography Helper
+   -------------------------------------------------------------------------- */
+
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-2);
+}
+
+.eyebrow-dark {
+  color: var(--color-warm-300);
+}
+
+.eyebrow-light {
+  color: var(--color-warm-400);
+}
+
+/* --------------------------------------------------------------------------
+   Featured Product Section (Quiet Technical Dominance)
+   -------------------------------------------------------------------------- */
+
+.featured-section {
+  position: relative;
+  background-color: var(--color-dark-bg);
+  color: var(--color-dark-text-primary);
+  padding: var(--space-24) 0;
+  border-top: 1px solid var(--color-dark-border-subtle);
+  border-bottom: 1px solid var(--color-dark-border-subtle);
+  overflow: hidden;
+}
+
+.featured-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1.1fr 0.9fr;
+  gap: var(--space-10);
+  align-items: center;
+}
+
+/* Left: Watch Stage with Image Constraint */
+.featured-image-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, rgba(30, 42, 56, 0.35) 0%, rgba(8, 10, 11, 0.8) 70%);
+  border: 1px solid var(--color-dark-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  min-height: 420px;
+}
+
+.featured-image-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.featured-watch-img {
+  max-width: 100%;
+  max-height: 380px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.65));
+  transition: transform var(--motion-slow);
+}
+
+.featured-image-wrapper:hover .featured-watch-img {
+  transform: scale(1.04);
+}
+
+/* Center: Editorial Narrative & Controls */
+.featured-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.featured-title {
+  font-size: clamp(32px, 3.2vw, 44px);
+  line-height: 1.1;
+  font-weight: 400;
+  color: var(--color-white);
+  margin-bottom: var(--space-2);
+}
+
+.featured-price {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-warm-300);
+  letter-spacing: 0.04em;
+  margin-bottom: var(--space-4);
+}
+
+.featured-desc {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--color-dark-text-secondary);
+  margin-bottom: var(--space-6);
+  max-width: 420px;
+}
+
+.featured-variants {
+  margin-bottom: var(--space-6);
+}
+
+.featured-swatches-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.featured-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-dark-bg);
+  cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+  transition: transform var(--motion-fast), box-shadow var(--motion-fast);
+  padding: 0;
+}
+
+.featured-swatch:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.6);
+}
+
+.featured-swatch--active {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px var(--color-warm-300);
+}
+
+.featured-cta-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.featured-purchase-btn {
+  min-width: 180px;
+}
+
+/* Right: Technical Specifications List */
+.featured-specs-panel {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--color-dark-border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+}
+
+.featured-specs-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.featured-spec-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.featured-spec-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.featured-spec-icon {
+  color: var(--color-warm-300);
+  flex-shrink: 0;
+}
+
+.featured-spec-value {
+  font-size: 13px;
+  color: var(--color-dark-text-primary);
+  line-height: 1.4;
+}
+
+/* --------------------------------------------------------------------------
+   Craftsmanship Section (Light Editorial Split Precision)
+   -------------------------------------------------------------------------- */
+
+.craftsmanship-section {
+  background-color: var(--color-bg-primary);
+  padding: var(--space-24) 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.craftsmanship-split-layout {
+  display: grid;
+  grid-template-columns: 1.05fr 1.15fr;
+  gap: var(--space-12);
+  align-items: center;
+}
+
+.craftsmanship-macro-stage {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  height: 480px;
+  border: 1px solid var(--color-border-subtle);
+  box-shadow: var(--shadow-md);
+}
+
+.craftsmanship-macro-wrapper {
+  width: 100%;
+  height: 100%;
+}
+
+.craftsmanship-macro-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform var(--motion-slow);
+}
+
+.craftsmanship-macro-stage:hover .craftsmanship-macro-img {
+  transform: scale(1.03);
+}
+
+.craftsmanship-content-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-8);
+}
+
+.craftsmanship-editorial-head {
+  display: flex;
+  flex-direction: column;
+}
+
+.craftsmanship-title {
+  font-size: clamp(32px, 3.4vw, 46px);
+  line-height: 1.15;
+  font-weight: 400;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-4);
+}
+
+.craftsmanship-desc {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-6);
+  max-width: 520px;
+}
+
+.craftsmanship-action {
+  margin-bottom: var(--space-2);
+}
+
+.craftsmanship-details-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.craft-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.craft-detail-img-wrap {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  max-height: 95px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background-color: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.craft-detail-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--motion-normal);
+}
+
+.craft-detail-item:hover .craft-detail-thumb {
+  transform: scale(1.06);
+}
+
+.craft-detail-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.craft-detail-sub {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   3D Interactive Showcase Experience
+   -------------------------------------------------------------------------- */
+
+.threed-section {
+  background-color: var(--color-dark-bg);
+  color: var(--color-dark-text-primary);
+  padding: var(--space-24) 0;
+  border-bottom: 1px solid var(--color-dark-border-subtle);
+  overflow: hidden;
+}
+
+.threed-container {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: var(--space-12);
+  align-items: center;
+}
+
+.threed-content {
+  display: flex;
+  flex-direction: column;
+  max-width: 440px;
+}
+
+.threed-title {
+  font-size: clamp(32px, 3.4vw, 46px);
+  line-height: 1.15;
+  font-weight: 400;
+  color: var(--color-white);
+  margin-bottom: var(--space-4);
+}
+
+.threed-description {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--color-dark-text-secondary);
+  margin-bottom: var(--space-8);
+}
+
+.threed-cta-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.threed-stage {
+  position: relative;
+  width: 100%;
+  height: 480px;
+  background: radial-gradient(circle at center, rgba(30, 42, 56, 0.4) 0%, rgba(8, 10, 11, 0.95) 75%);
+  border: 1px solid var(--color-dark-border-subtle);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+}
+
+.threed-watch-wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease-out;
+}
+
+.threed-watch-image {
+  max-width: 320px;
+  max-height: 380px;
+  width: 85%;
+  height: 85%;
+  object-fit: contain;
+  filter: drop-shadow(0 25px 50px rgba(0, 0, 0, 0.7));
+  pointer-events: none;
+}
+
+.threed-minimal-toolbar {
+  position: absolute;
+  bottom: var(--space-5);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: rgba(18, 22, 28, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  z-index: 10;
+}
+
+.threed-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-dark-text-secondary);
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--motion-fast);
+}
+
+.threed-toolbar-btn:hover {
+  color: var(--color-white);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.threed-toolbar-btn--active {
+  color: var(--color-warm-300);
+  background: rgba(184, 155, 99, 0.15);
+}
+
+/* --------------------------------------------------------------------------
+   Brand Story Section (Atmospheric Full-Bleed Alpine Heritage)
+   -------------------------------------------------------------------------- */
+
+.brand-story-section {
+  position: relative;
+  min-height: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: var(--space-24) 0;
+}
+
+.brand-story-bg-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.brand-story-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  filter: brightness(0.65);
+}
+
+.brand-story-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(8, 10, 11, 0.45) 0%, rgba(8, 10, 11, 0.9) 100%);
+}
+
+.brand-story-container {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+}
+
+.brand-story-content {
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.brand-story-title {
+  font-size: clamp(36px, 4.2vw, 56px);
+  font-weight: 400;
+  color: var(--color-white);
+  line-height: 1.15;
+  margin: var(--space-3) 0 var(--space-4);
+  letter-spacing: -0.01em;
+}
+
+.brand-story-tagline {
+  font-size: clamp(17px, 2vw, 22px);
+  font-style: italic;
+  color: var(--color-warm-200);
+  margin-bottom: var(--space-8);
+  line-height: 1.5;
+  font-weight: 300;
+}
+
+.brand-story-cta {
+  display: flex;
+  justify-content: center;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints for Homepage Feature Sections
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 1024px) {
+  .featured-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-8);
+  }
+  .featured-specs-panel {
+    grid-column: span 2;
+  }
+  .craftsmanship-split-layout {
+    gap: var(--space-8);
+  }
+  .threed-container {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+}
+
+@media (max-width: 768px) {
+  .featured-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+    text-align: center;
+  }
+  .featured-content {
+    align-items: center;
+  }
+  .featured-specs-panel {
+    grid-column: span 1;
+  }
+  .featured-swatches-row {
+    justify-content: center;
+  }
+  .featured-cta-wrap {
+    justify-content: center;
+  }
+  .craftsmanship-split-layout {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+  .craftsmanship-macro-stage {
+    height: 320px;
+  }
+  .craftsmanship-details-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+  .threed-stage {
+    height: 360px;
+  }
+  .threed-minimal-toolbar {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 90%;
+  }
+}
+
+
 
