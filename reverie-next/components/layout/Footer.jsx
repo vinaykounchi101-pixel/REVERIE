@@ -58,6 +58,7 @@ export default function Footer() {
                 <li><Link href="/support" className="footer-link font-ui">Shipping & Returns</Link></li>
                 <li><Link href="/support" className="footer-link font-ui">5-Year Warranty</Link></li>
                 <li><Link href="/account" className="footer-link font-ui">Collector Account</Link></li>
+                <li><Link href="/admin" className="footer-link font-ui">Atelier Portal (CMS)</Link></li>
               </ul>
             </div>
           </div>
