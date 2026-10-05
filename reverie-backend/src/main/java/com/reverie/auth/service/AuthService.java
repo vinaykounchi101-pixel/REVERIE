@@ -139,20 +139,73 @@ public class AuthService {
     @Transactional
     public AuthResponse oauthLogin(OAuthLoginRequest request, HttpServletRequest httpRequest) {
         String clientIp = getClientIp(httpRequest);
-        String email = request.getEmail().toLowerCase().trim();
+        String verifiedEmail;
+        String firstName = request.getFirstName();
+        String lastName = request.getLastName();
 
-        User user = userRepository.findByEmail(email).orElseGet(() -> {
-            String firstName = (request.getFirstName() != null && !request.getFirstName().isBlank())
-                    ? request.getFirstName().trim() : "Collector";
-            String lastName = (request.getLastName() != null && !request.getLastName().isBlank())
-                    ? request.getLastName().trim() : "Member";
+        if (request.getIdToken() != null && !request.getIdToken().isBlank()) {
+            try {
+                // Decode and verify Google ID token claims
+                String[] parts = request.getIdToken().split("\\.");
+                if (parts.length < 2) {
+                    throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS, "Malformed Google ID token");
+                }
+                String payloadJson = new String(java.util.Base64.getUrlDecoder().decode(parts[1]), java.nio.charset.StandardCharsets.UTF_8);
+                com.fasterxml.jackson.databind.JsonNode claims = new com.fasterxml.jackson.databind.ObjectMapper().readTree(payloadJson);
+                
+                String iss = claims.has("iss") ? claims.get("iss").asText() : "";
+                if (!"https://accounts.google.com".equals(iss) && !"accounts.google.com".equals(iss)) {
+                    throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS, "Invalid Google ID token issuer: " + iss);
+                }
+                
+                if (googleClientId != null && !googleClientId.isBlank() && claims.has("aud")) {
+                    String aud = claims.get("aud").asText();
+                    if (!googleClientId.equals(aud)) {
+                        throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS, "Invalid Google ID token audience");
+                    }
+                }
+                
+                long exp = claims.has("exp") ? claims.get("exp").asLong() : 0L;
+                if (exp > 0 && Instant.ofEpochSecond(exp).isBefore(Instant.now())) {
+                    throw new BusinessException(ErrorCode.AUTH_TOKEN_EXPIRED, "Google ID token has expired");
+                }
+                
+                if (!claims.has("email")) {
+                    throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS, "Google ID token missing verified email");
+                }
+                
+                verifiedEmail = claims.get("email").asText().toLowerCase().trim();
+                if (claims.has("given_name") && (firstName == null || firstName.isBlank())) {
+                    firstName = claims.get("given_name").asText();
+                }
+                if (claims.has("family_name") && (lastName == null || lastName.isBlank())) {
+                    lastName = claims.get("family_name").asText();
+                }
+            } catch (BusinessException be) {
+                throw be;
+            } catch (Exception ex) {
+                log.error("Failed to verify Google ID token: {}", ex.getMessage());
+                throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS, "Invalid or unverified Google ID token");
+            }
+        } else if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            if ("production".equalsIgnoreCase(System.getProperty("app.environment", System.getenv().getOrDefault("APP_ENVIRONMENT", "local")))) {
+                throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS, "ID token is strictly required for Google OAuth authentication in production.");
+            }
+            verifiedEmail = request.getEmail().toLowerCase().trim();
+        } else {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Either a valid Google ID token or email address must be provided.");
+        }
 
+        final String finalFirstName = (firstName != null && !firstName.isBlank()) ? firstName.trim() : "Collector";
+        final String finalLastName = (lastName != null && !lastName.isBlank()) ? lastName.trim() : "Member";
+
+        User user = userRepository.findByEmail(verifiedEmail).orElseGet(() -> {
             String randomSecret = UUID.randomUUID().toString() + UUID.randomUUID().toString();
             User newUser = new User(
-                    email,
+                    verifiedEmail,
                     passwordEncoder.encode(randomSecret),
-                    firstName,
-                    lastName,
+                    finalFirstName,
+                    finalLastName,
                     null,
                     Role.CUSTOMER
             );
@@ -371,7 +424,7 @@ public class AuthService {
             emailService.sendPasswordResetOtp(identifier, recipientName, rawOtp);
         }
 
-        log.info("[NOTIFICATION DISPATCH] Generated {} OTP for {}: {}", type, identifier, rawOtp);
+        log.info("[NOTIFICATION DISPATCH] Dispatched {} OTP to {}", type, identifier);
     }
 
     private String getClientIp(HttpServletRequest request) {

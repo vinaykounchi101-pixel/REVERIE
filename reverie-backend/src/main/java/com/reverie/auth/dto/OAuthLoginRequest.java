@@ -7,12 +7,12 @@ import jakarta.validation.constraints.NotBlank;
 @Schema(description = "OAuth / Social Sign-In Request")
 public class OAuthLoginRequest {
 
-    @NotBlank(message = "Email address is mandatory")
-    @Email(message = "Must be a valid email format")
+    @Schema(example = "eyJhbGciOiJSUzI1NiIsImtpZCI6...")
+    private String idToken;
+
     @Schema(example = "collector@example.com")
     private String email;
 
-    @NotBlank(message = "First name is required")
     @Schema(example = "Vinay")
     private String firstName;
 
@@ -78,6 +78,14 @@ public class OAuthLoginRequest {
 
     public void setProviderId(String providerId) {
         this.providerId = providerId;
+    }
+
+    public String getIdToken() {
+        return idToken;
+    }
+
+    public void setIdToken(String idToken) {
+        this.idToken = idToken;
     }
 
     public String getAvatarUrl() {

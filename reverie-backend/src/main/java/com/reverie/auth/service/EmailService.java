@@ -72,8 +72,7 @@ public class EmailService {
 
     private void sendMimeEmail(String toEmail, String subject, String htmlContent, String otpCode, String type) {
         if (mailSender == null || mailUsername == null || mailUsername.isBlank()) {
-            log.warn("[EMAIL SERVICE NOT CONFIGURED] Gmail SMTP credentials (SPRING_MAIL_USERNAME) not set in environment. " +
-                    "Logging {} OTP for {}: {}", type, toEmail, otpCode);
+            log.warn("[EMAIL SERVICE NOT CONFIGURED] Gmail SMTP credentials (SPRING_MAIL_USERNAME) not set in environment. Dispatched mock {} notification for {}", type, toEmail);
             return;
         }
 
@@ -88,13 +87,11 @@ public class EmailService {
             helper.setText(htmlContent, true);
 
             mailSender.send(message);
-            log.info("[EMAIL SENT] Successfully transmitted {} OTP to {}", type, toEmail);
+            log.info("[EMAIL SENT] Successfully transmitted {} OTP notification to {}", type, toEmail);
         } catch (MessagingException | UnsupportedEncodingException e) {
             log.error("[EMAIL ERROR] Failed to send {} email to {}: {}", type, toEmail, e.getMessage());
-            log.info("[FALLBACK OTP] Verification code for {}: {}", toEmail, otpCode);
         } catch (Exception ex) {
             log.error("[EMAIL ERROR] Unexpected error while dispatching email to {}: {}", toEmail, ex.getMessage());
-            log.info("[FALLBACK OTP] Verification code for {}: {}", toEmail, otpCode);
         }
     }
 

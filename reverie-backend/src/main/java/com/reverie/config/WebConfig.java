@@ -14,6 +14,9 @@ import java.util.List;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    @Value("${app.environment:local}")
+    private String environment;
+
     @Value("${app.frontend-origin:http://localhost:3000,http://localhost:3001}")
     private String allowedOrigins;
 
@@ -21,21 +24,31 @@ public class WebConfig implements WebMvcConfigurer {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         List<String> origins = Arrays.asList(allowedOrigins.split(","));
-        
-        // Support dynamic cloud deployments (Render, Vercel, Tunnels, Localhost)
-        List<String> patterns = new java.util.ArrayList<>(Arrays.asList(
-            "http://localhost:*",
-            "http://127.0.0.1:*",
-            "https://*.onrender.com",
-            "https://*.vercel.app",
-            "https://*.loca.lt",
-            "https://*.ngrok-free.app",
-            "https://*.ngrok.io"
-        ));
-        for (String origin : origins) {
-            String trimmed = origin.trim();
-            if (!trimmed.isEmpty() && !patterns.contains(trimmed)) {
-                patterns.add(trimmed);
+        List<String> patterns = new java.util.ArrayList<>();
+
+        // In production, strictly use configured origins; in local/dev allow local ports & dev tunnels
+        if ("production".equalsIgnoreCase(environment)) {
+            for (String origin : origins) {
+                String trimmed = origin.trim();
+                if (!trimmed.isEmpty()) {
+                    patterns.add(trimmed);
+                }
+            }
+        } else {
+            patterns.addAll(Arrays.asList(
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "https://*.onrender.com",
+                "https://*.vercel.app",
+                "https://*.loca.lt",
+                "https://*.ngrok-free.app",
+                "https://*.ngrok.io"
+            ));
+            for (String origin : origins) {
+                String trimmed = origin.trim();
+                if (!trimmed.isEmpty() && !patterns.contains(trimmed)) {
+                    patterns.add(trimmed);
+                }
             }
         }
         configuration.setAllowedOriginPatterns(patterns);

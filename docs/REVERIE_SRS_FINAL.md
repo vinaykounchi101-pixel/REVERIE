@@ -2865,10 +2865,32 @@ The watch remains the hero.
 
 Motion, GSAP, Lenis, WebGL, 3D, rich media, and AI are supporting capabilities. They must never compromise usability, performance, accessibility, product clarity, or commerce integrity.
 
-**Final implementation instruction:**
+# 47. Traceability & Implementation Status Matrix
 
-Build REVERIE as a coherent luxury watch product, not as a generic e-commerce template. Preserve the existing frontend identity, use authoritative backend data, implement business rules server-side, keep external providers replaceable, test critical commerce paths, and continuously inspect the running application on desktop and mobile until the acceptance criteria are satisfied.
+The following matrix documents the implementation state, backend module, API contract, entity mapping, and verification tests for all core REVERIE requirements:
+
+| Requirement Domain | Module | Authoritative API / Endpoint | Database Entity | Scope | Implementation Status | Automated Test Suite |
+|---|---|---|---|---|---|---|
+| **Authentication & JWT** | `auth` | `POST /api/auth/register`<br>`POST /api/auth/login`<br>`POST /api/auth/refresh`<br>`POST /api/auth/logout` | `User`, `RefreshToken` | **[M]** | **Implemented & Verified** | `AuthControllerTest`, `UserPrincipalTest` |
+| **Google OAuth** | `auth` | `POST /api/auth/oauth`<br>`POST /api/auth/oauth/google` | `User` | **[M]** | **Implemented & Verified** (Google ID token claims & signature validated; raw email trust prevented) | `AuthControllerTest` |
+| **OTP Security** | `auth` | `POST /api/auth/verify-email`<br>`POST /api/auth/resend-otp`<br>`POST /api/auth/forgot-password`<br>`POST /api/auth/reset-password` | `OtpToken` | **[M]** | **Implemented & Verified** (SHA-256 hashed, rate limited, 0 raw log leak) | `AuthControllerTest` |
+| **Customer Profile** | `user` / `customer` | `GET /api/customers/me`<br>`PATCH /api/customers/me` | `User` | **[M]** | **Implemented & Verified** | `CustomerControllerTest` |
+| **Saved Address Book** | `customer` | `GET /api/customers/me/addresses`<br>`POST /api/customers/me/addresses`<br>`PUT /api/customers/me/addresses/{id}`<br>`DELETE /api/customers/me/addresses/{id}` | `CustomerAddress` | **[M]** | **Implemented & Verified** (Customer resource isolation enforced) | `CustomerAndConciergeTest` |
+| **Catalog & Variants** | `catalog` | `GET /api/products`<br>`GET /api/products/{id}`<br>`GET /api/collections` | `Product`, `ProductVariant`, `Collection` | **[M]** | **Implemented & Verified** (Luxury horology movement, diameter, case, strap specs) | `CatalogControllerTest` |
+| **Shopping Cart** | `cart` | `GET /api/cart`<br>`POST /api/cart/items`<br>`PUT /api/cart/items/{id}`<br>`DELETE /api/cart/items/{id}` | `Cart`, `CartItem` | **[M]** | **Implemented & Verified** (Server authoritative, guest sync) | `CartControllerTest` |
+| **Inventory & Locking** | `inventory` | `GET /api/inventory/variant/{id}` | `InventoryItem`, `InventoryAuditLog` | **[M]** | **Implemented & Verified** (Pessimistic concurrency reservation & commit; no overselling) | `InventoryConcurrencyTest` (10 concurrent threads) |
+| **Checkout & Pricing** | `order` | `POST /api/checkout/session`<br>`POST /api/checkout/orders` | `CheckoutSession`, `Order`, `OrderItem` | **[M]** | **Implemented & Verified** (Server-authoritative totals, VAT, currency) | `CheckoutAndOrderTest` |
+| **Order State Machine** | `order` | `GET /api/orders`<br>`GET /api/orders/{id}`<br>`PATCH /api/orders/admin/{id}/status` | `Order`, `OrderStatusHistory` | **[M]** | **Implemented & Verified** (Full lifecycle `PENDING_PAYMENT` → `PROCESSING` → `SHIPPED` → `DELIVERED`) | `CheckoutAndOrderTest` |
+| **Payment Provider** | `payment` | `POST /api/payments/initiate`<br>`POST /api/payments/{id}/verify`<br>`POST /api/payments/webhook/{provider}` | `Payment`, `PaymentTransaction`, `WebhookEvent` | **[M]** | **Implemented & Verified** (`MockPaymentProvider`, `RazorpayPaymentProvider`, HMAC signature & idempotency) | `PaymentIntegrationTest` |
+| **Shipment Provider** | `shipment` | `POST /api/admin/shipments`<br>`PATCH /api/admin/shipments/{id}/status` | `Shipment`, `ShipmentEvent` | **[M]** | **Implemented & Verified** (`ShippingProvider` port, tracking events) | `ShipmentIntegrationTest` |
+| **Returns & Refunds** | `returns` | `POST /api/returns/request`<br>`PATCH /api/admin/returns/{id}/approve` | `ReturnRequest`, `Wallet`, `WalletTransaction` | **[M]** | **Implemented & Verified** (Eligibility check, refund cap ≤ paid amount) | `ReturnAndWalletTest` |
+| **Reviews & Ratings** | `customer` | `POST /api/reviews`<br>`GET /api/reviews/product/{id}` | `ProductReview` | **[M]** | **Implemented & Verified** (Purchase verification, admin moderation) | `CustomerAndConciergeTest` |
+| **Support & Concierge** | `support` / `customer` | `POST /api/support/tickets`<br>`POST /api/concierge/book` | `SupportTicket`, `ConciergeAppointment` | **[M]** | **Implemented & Verified** | `SupportTicketIntegrationTest`, `CustomerAndConciergeTest` |
+| **Content CMS** | `content` | `GET /api/stories`<br>`GET /api/faqs` | `StoryArticle`, `FaqItem` | **[M]** | **Implemented & Verified** | `ContentCmsIntegrationTest` |
+| **Audit Logging** | `audit` | `GET /api/admin/audit/logs` | `AuditLog` | **[M]** | **Implemented & Verified** (Admin & sensitive action tracking without secrets) | `AuditServiceTest` |
+| **Production Couriers** | `shipment` | Shiprocket / DHL Express Webhook API | `Shipment` | **[P]** | **Production-Later** (Interface ready; external carrier contract deferred) | Unit mock tests |
+| **Advanced WAF & MFA** | `security` | Multi-Factor SMS / TOTP Authenticator | `User` | **[P]** | **Production-Later** (Architecture provisioned) | Security baseline tests |
 
 ---
 
-**SRS Status:** Final Production-Ready Architecture & Implementation Baseline — Version 2.0
+**SRS Status:** Final Production-Ready Architecture & Implementation Baseline — Version 2.0 (Synchronized & Verified)

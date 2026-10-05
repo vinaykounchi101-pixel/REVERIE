@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/customers/addresses")
+@RequestMapping({"/api/customers/addresses", "/api/customers/me/addresses"})
 @Tag(name = "Customer Address Book", description = "Endpoints for client address book management")
 public class CustomerAddressController {
 
