@@ -7,16 +7,17 @@ import { Heart, SlidersHorizontal, Eye, Sparkles, Compass, Check } from 'lucide-
 import { allWatchCatalog } from '../../data/allProductsData';
 import Button from '../../components/ui/Button';
 import { useCart } from '../../context/CartContext';
+import { useWishlist } from '../../context/WishlistContext';
 
 function CollectionsContent() {
   const searchParams = useSearchParams();
   const genderParam = searchParams.get('gender') || 'All';
   const { addToCart } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
 
   const [selectedGender, setSelectedGender] = useState(genderParam);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('featured');
-  const [wishlist, setWishlist] = useState({});
   const [addedItem, setAddedItem] = useState(null);
 
   useEffect(() => {
@@ -37,10 +38,10 @@ function CollectionsContent() {
       ? womensCategories 
       : allCategories;
 
-  const toggleWishlist = (id, e) => {
+  const handleToggleWishlist = (id, e) => {
     e.preventDefault();
     e.stopPropagation();
-    setWishlist((prev) => ({ ...prev, [id]: !prev[id] }));
+    toggleWishlist(id);
   };
 
   const handleAdd = (product, e) => {
@@ -166,7 +167,7 @@ function CollectionsContent() {
         ) : (
           <div className="collections-catalog-grid">
             {filteredProducts.map((watch) => {
-              const isFav = wishlist[watch.id];
+              const isFav = isInWishlist(watch.id);
               const isAdded = addedItem === watch.id;
 
               return (
@@ -200,11 +201,11 @@ function CollectionsContent() {
                       {/* Wishlist Icon */}
                       <button
                         type="button"
-                        onClick={(e) => toggleWishlist(watch.id, e)}
+                        onClick={(e) => handleToggleWishlist(watch.id, e)}
                         className={`catalog-card-wishlist ${isFav ? 'catalog-card-wishlist--active' : ''}`}
                         aria-label={isFav ? 'Remove from wishlist' : 'Add to wishlist'}
                       >
-                        <Heart size={16} fill={isFav ? '#e63946' : 'none'} stroke={isFav ? '#e63946' : 'currentColor'} />
+                        <Heart size={16} fill={isFav ? '#d4af37' : 'none'} stroke={isFav ? '#d4af37' : 'currentColor'} />
                       </button>
 
                       {/* Hover Quick Action Overlay */}

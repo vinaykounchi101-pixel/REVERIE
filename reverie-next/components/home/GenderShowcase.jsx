@@ -1,11 +1,17 @@
 "use client";
 import React, { useState } from 'react';
-import { ArrowRight, Sparkles, Compass, Heart } from 'lucide-react';
+import Link from 'next/link';
+import { Sparkles, Compass, Check, Heart } from 'lucide-react';
 import { allWatchCatalog } from '../../data/allProductsData';
 import Button from '../ui/Button';
+import { useCart } from '../../context/CartContext';
+import { useWishlist } from '../../context/WishlistContext';
 
-export default function GenderShowcase({ onNavigate, onSelectProduct, onAddToCart }) {
+export default function GenderShowcase({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('men');
+  const [addedId, setAddedId] = useState(null);
+  const { addToCart } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
 
   const mensFeatured = allWatchCatalog.filter(w => w.gender === 'Men').slice(0, 4);
   const womensFeatured = allWatchCatalog.filter(w => w.gender === 'Women').slice(0, 4);
@@ -16,6 +22,20 @@ export default function GenderShowcase({ onNavigate, onSelectProduct, onAddToCar
     if (onNavigate) {
       onNavigate('collections', { gender: activeTab === 'men' ? 'Men' : 'Women' });
     }
+  };
+
+  const handleToggleWishlist = (watchId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWishlist(watchId);
+  };
+
+  const handleAdd = (watch, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(watch, 1, watch.straps ? watch.straps[0] : 'Alligator Leather');
+    setAddedId(watch.id);
+    setTimeout(() => setAddedId(null), 2000);
   };
 
   return (
@@ -57,66 +77,87 @@ export default function GenderShowcase({ onNavigate, onSelectProduct, onAddToCar
 
         {/* 4-Watch Product Grid */}
         <div className="catalog-grid gender-showcase-catalog-grid">
-          {displayWatches.map((watch) => (
-            <article
-              key={watch.id}
-              className="catalog-card"
-              onClick={() => onSelectProduct && onSelectProduct(watch)}
-            >
-              <div className="catalog-card-media">
-                <img
-                  src={watch.image}
-                  alt={watch.name}
-                  className="catalog-card-img"
-                  loading="lazy"
-                />
-                <div className="catalog-card-badges">
-                  <span className="catalog-card-ref font-ui">{watch.ref}</span>
-                  <span className="catalog-card-gender-badge font-ui">{watch.gender}</span>
-                </div>
-              </div>
+          {displayWatches.map((watch) => {
+            const isAdded = addedId === watch.id;
+            return (
+              <article key={watch.id} className="catalog-card">
+                <Link
+                  href={`/product/${watch.id}`}
+                  className="catalog-card-link"
+                  style={{ textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column', height: '100%' }}
+                >
+                  <div className="catalog-card-media">
+                    <img
+                      src={watch.image}
+                      alt={watch.name}
+                      className="catalog-card-img"
+                      loading="lazy"
+                    />
+                    <div className="catalog-card-badges">
+                      <span className="catalog-card-ref font-ui">{watch.ref}</span>
+                      <span className="catalog-card-gender-badge font-ui">{watch.gender}</span>
+                    </div>
 
-              <div className="catalog-card-body">
-                <div className="catalog-card-meta">
-                  <span className="catalog-card-collection font-ui">{watch.collection}</span>
-                  <span className="catalog-card-dot">•</span>
-                  <span className="catalog-card-cat font-ui">{watch.category}</span>
-                </div>
-                <h3 className="catalog-card-name font-ui">{watch.name}</h3>
-                <p className="catalog-card-desc font-ui">{watch.shortDesc}</p>
-                
-                <div className="catalog-card-bottom">
-                  <span className="catalog-card-price font-ui">{watch.priceFormatted}</span>
-                  <Button
-                    variant="primary"
-                    className="catalog-card-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onAddToCart) onAddToCart(watch);
-                    }}
-                  >
-                    Add to Bag
-                  </Button>
-                </div>
-              </div>
-            </article>
-          ))}
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleWishlist(watch.id, e)}
+                      className={`catalog-card-wishlist ${isInWishlist(watch.id) ? 'catalog-card-wishlist--active' : ''}`}
+                      aria-label={isInWishlist(watch.id) ? 'Remove from wishlist' : 'Add to wishlist'}
+                    >
+                      <Heart size={16} fill={isInWishlist(watch.id) ? '#d4af37' : 'none'} stroke={isInWishlist(watch.id) ? '#d4af37' : 'currentColor'} />
+                    </button>
+                  </div>
+
+                  <div className="catalog-card-body">
+                    <div className="catalog-card-meta">
+                      <span className="catalog-card-collection font-ui">{watch.collection}</span>
+                      <span className="catalog-card-dot">•</span>
+                      <span className="catalog-card-cat font-ui">{watch.category}</span>
+                    </div>
+                    <h3 className="catalog-card-name font-ui">{watch.name}</h3>
+                    <p className="catalog-card-desc font-ui">{watch.shortDesc}</p>
+                    
+                    <div className="catalog-card-bottom">
+                      <span className="catalog-card-price font-ui">{watch.priceFormatted}</span>
+                      <Button
+                        variant="primary"
+                        className="catalog-card-btn"
+                        onClick={(e) => handleAdd(watch, e)}
+                      >
+                        {isAdded ? (
+                          <>
+                            <Check size={14} />
+                            <span>Added</span>
+                          </>
+                        ) : (
+                          'Add to Bag'
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </Link>
+              </article>
+            );
+          })}
         </div>
 
         {/* Bottom CTA to view full 24 models */}
         <div className="gender-showcase-footer">
-          <Button
-            variant="secondary"
-            arrow
-            onClick={handleExploreAll}
+          <Link
+            href={`/collections?gender=${activeTab === 'men' ? 'Men' : 'Women'}`}
+            style={{ textDecoration: 'none' }}
           >
-            {activeTab === 'men' 
-              ? "View All 24 Men's Models (V-001 to V-024)" 
-              : "View All 24 Women's Models (W-001 to W-024)"}
-          </Button>
+            <Button
+              variant="secondary"
+              arrow
+            >
+              {activeTab === 'men' 
+                ? "View All 24 Men's Models (V-001 to V-024)" 
+                : "View All 24 Women's Models (W-001 to W-024)"}
+            </Button>
+          </Link>
         </div>
       </div>
     </section>
   );
 }
-

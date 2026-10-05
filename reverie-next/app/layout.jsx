@@ -5,6 +5,7 @@ import '../styles/hero3d.css';
 import '../styles/components.css';
 import '../styles/pages.css';
 import { CartProvider } from '../context/CartContext';
+import { WishlistProvider } from '../context/WishlistContext';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import SmoothScroll from '../components/layout/SmoothScroll';
@@ -39,15 +40,17 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${inter.variable} ${cormorant.variable} ${cinzel.variable}`}>
       <body className="velara-app antialiased">
-        <CartProvider>
-          <SmoothScroll>
-            <Header />
-            <main id="main-content" className="app-main-content">
-              {children}
-            </main>
-            <Footer />
-          </SmoothScroll>
-        </CartProvider>
+        <WishlistProvider>
+          <CartProvider>
+            <SmoothScroll>
+              <Header />
+              <main id="main-content" className="app-main-content">
+                {children}
+              </main>
+              <Footer />
+            </SmoothScroll>
+          </CartProvider>
+        </WishlistProvider>
       </body>
     </html>
   );

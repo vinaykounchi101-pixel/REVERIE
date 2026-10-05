@@ -3,14 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, User, ShoppingBag, Menu, X } from 'lucide-react';
+import { Search, User, ShoppingBag, Heart, Menu, X } from 'lucide-react';
 import IconButton from '../ui/IconButton';
 import { useCart } from '../../context/CartContext';
+import { useWishlist } from '../../context/WishlistContext';
 import { authService } from '../../services/authService';
 
 export default function Header() {
   const pathname = usePathname();
   const { totalCartCount } = useCart();
+  const { wishlistCount } = useWishlist();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -55,6 +57,7 @@ export default function Header() {
     { label: 'Collections', href: '/collections' },
     { label: "Men's Horology", href: '/collections?gender=Men' },
     { label: "Women's Horology", href: '/collections?gender=Women' },
+    { label: 'Wishlist', href: '/wishlist' },
     { label: 'Brand Story', href: '/story' },
     { label: 'Track Order', href: '/order-tracking' },
     { label: 'Support', href: '/support' },
@@ -86,7 +89,7 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="site-header-nav" aria-label="Main Navigation">
             <ul className="nav-list">
-              {navItems.slice(0, 5).map((item) => {
+              {navItems.slice(0, 4).map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <li key={item.label} className="nav-item">
@@ -108,6 +111,15 @@ export default function Header() {
               <IconButton
                 icon={<Search size={18} strokeWidth={1.5} />}
                 label="Search timepieces"
+                variant={isDarkTop ? 'light' : 'dark'}
+              />
+            </Link>
+
+            <Link href="/wishlist" aria-label="Curated Wishlist">
+              <IconButton
+                icon={<Heart size={18} strokeWidth={1.5} />}
+                label="Curated Wishlist"
+                badge={wishlistCount}
                 variant={isDarkTop ? 'light' : 'dark'}
               />
             </Link>

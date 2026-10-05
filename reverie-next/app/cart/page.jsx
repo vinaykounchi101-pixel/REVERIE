@@ -1,13 +1,18 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Trash2, ShieldCheck, Truck, ArrowRight, ShoppingBag } from 'lucide-react';
+import { Trash2, ShieldCheck, Truck, ArrowRight, ShoppingBag, User } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import { useCart } from '../../context/CartContext';
+import AuthModal from '../../components/auth/AuthModal';
+import { authService } from '../../services/authService';
 
 export default function CartPage() {
   const { cartItems, updateQuantity, removeItem, cartSubtotal } = useCart();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState('register');
+  const currentUser = authService.getCurrentUser();
 
   const shippingCost = 0; // Complimentary
   const estimatedTax = Math.round(cartSubtotal * 0.077); // 7.7% Swiss VAT
@@ -15,21 +20,55 @@ export default function CartPage() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="page-cart page-cart--empty container">
-        <div className="cart-empty-box font-ui">
-          <ShoppingBag size={56} strokeWidth={1} className="cart-empty-icon" />
-          <h1 className="cart-empty-title font-display">Your Shopping Bag is Empty</h1>
-          <p className="cart-empty-sub">Explore our Haute Horlogerie catalog and select a timepiece of exceptional precision.</p>
-          <Button variant="primary" href="/collections" arrow>
-            Discover Collections
-          </Button>
+      <div className="page-cart page-cart--empty container" style={{ paddingTop: 'calc(var(--header-height) + var(--space-12))', paddingBottom: 'var(--space-28)' }}>
+        <div className="cart-empty-box font-ui" style={{ textAlign: 'center', maxWidth: '580px', margin: '0 auto', padding: 'var(--space-12) var(--space-6)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius-lg)' }}>
+          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(212,175,55,0.1)', color: 'var(--color-warm-300, #d4af37)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto var(--space-4)' }}>
+            <ShoppingBag size={32} strokeWidth={1.25} />
+          </div>
+          <span className="eyebrow eyebrow-dark font-ui">SHOPPING BAG</span>
+          <h1 className="cart-empty-title font-display" style={{ fontSize: '32px', margin: '8px 0 12px', color: 'var(--color-text-primary)' }}>
+            Your Shopping Bag is Empty
+          </h1>
+          <p className="cart-empty-sub" style={{ color: 'var(--color-text-secondary)', fontSize: '14px', lineHeight: '1.6', marginBottom: '28px', maxWidth: '420px', margin: '0 auto 28px' }}>
+            Explore our Haute Horlogerie catalog and select an exceptional timepiece, or identify yourself to retrieve a previously saved acquisition.
+          </p>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', maxWidth: '380px', margin: '0 auto' }}>
+            <Button variant="primary" href="/collections" arrow style={{ flex: '1 1 170px' }}>
+              Explore Collections
+            </Button>
+            
+            {!currentUser ? (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setAuthMode('register');
+                  setAuthModalOpen(true);
+                }}
+                style={{ flex: '1 1 170px' }}
+              >
+                Sign In / Sign Up
+              </Button>
+            ) : (
+              <Button variant="secondary" href="/account" style={{ flex: '1 1 170px' }}>
+                View Collector Portal
+              </Button>
+            )}
+          </div>
         </div>
+
+        <AuthModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          initialMode={authMode}
+          onAuthSuccess={() => setAuthModalOpen(false)}
+        />
       </div>
     );
   }
 
   return (
-    <div className="page-cart container">
+    <div className="page-cart container" style={{ paddingTop: 'calc(var(--header-height) + var(--space-8))', paddingBottom: 'var(--space-28)' }}>
       <div className="cart-header font-ui">
         <h1 className="cart-title font-display">Shopping Bag</h1>
         <span className="cart-count-badge">
@@ -63,7 +102,7 @@ export default function CartPage() {
 
                 <div className="cart-item-meta">
                   <span>Strap: <strong>{item.selectedStrap || 'Steel Bracelet'}</strong></span>
-                  <span className="cart-item-meta-dot">�</span>
+                  <span className="cart-item-meta-dot">•</span>
                   <span>Includes Atelier Certificate</span>
                 </div>
 

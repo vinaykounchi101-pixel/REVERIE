@@ -1,7 +1,6 @@
 /**
- * REVERIE Luxury Horology — Authentication Service
+ * REVERIE Luxury Horology — Authentication Service (Prototype)
  * Communicates with Spring Boot API endpoints under /api/auth
- * Handles token storage, session management, and fallback mock handling.
  */
 
 const API_BASE = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
@@ -13,7 +12,6 @@ const REFRESH_KEY = 'reverie_refresh_token';
 const USER_KEY = 'reverie_auth_user';
 
 export const authService = {
-  // Store authentication session
   setAuthSession(data) {
     if (!data) return;
     if (data.accessToken) localStorage.setItem(TOKEN_KEY, data.accessToken);
@@ -22,7 +20,6 @@ export const authService = {
     window.dispatchEvent(new Event('reverie_auth_change'));
   },
 
-  // Clear authentication session
   clearAuthSession() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_KEY);
@@ -30,17 +27,14 @@ export const authService = {
     window.dispatchEvent(new Event('reverie_auth_change'));
   },
 
-  // Get current access token
   getAccessToken() {
     return localStorage.getItem(TOKEN_KEY) || null;
   },
 
-  // Get current refresh token
   getRefreshToken() {
     return localStorage.getItem(REFRESH_KEY) || null;
   },
 
-  // Get stored user object
   getCurrentUser() {
     try {
       const userStr = localStorage.getItem(USER_KEY);
@@ -50,213 +44,180 @@ export const authService = {
     }
   },
 
-  // Check if user is currently logged in
   isAuthenticated() {
     return !!localStorage.getItem(TOKEN_KEY);
   },
 
+  // Check if email exists
+  async checkEmail(email) {
+    try {
+      const res = await fetch(`${API_BASE}/auth/check-email?email=${encodeURIComponent(email.trim())}`);
+      const json = await res.json();
+      return json.data === true;
+    } catch {
+      return false;
+    }
+  },
+
   // Customer Login
   async login(email, password) {
-    try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), password }),
+    });
 
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || 'Invalid credentials.');
-      }
-
-      this.setAuthSession(json.data);
-      return json.data;
-    } catch (err) {
-      // If backend is unreachable or local development fallback
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        const mockUser = {
-          id: 'usr_demo_01',
-          email,
-          firstName: email.split('@')[0] || 'Collector',
-          lastName: 'Member',
-          role: 'CUSTOMER',
-          emailVerified: true,
-          active: true,
-        };
-        const mockData = {
-          accessToken: 'mock_jwt_access_token_' + Date.now(),
-          refreshToken: 'mock_refresh_token_' + Date.now(),
-          user: mockUser,
-        };
-        this.setAuthSession(mockData);
-        return mockData;
-      }
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      const err = new Error(json.message || 'Invalid email or password.');
+      err.status = res.status;
+      err.code = json.code || 'AUTH_FAILED';
       throw err;
     }
+
+    this.setAuthSession(json.data);
+    return json.data;
+  },
+
+  // OAuth / Social Sign-In (Google etc.) — Auto provisions account if not found
+  async oauthLogin({ email, firstName, lastName, provider = 'GOOGLE', providerId, avatarUrl }) {
+    const res = await fetch(`${API_BASE}/auth/oauth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email.trim(),
+        firstName: firstName || 'Collector',
+        lastName: lastName || 'Member',
+        provider,
+        providerId: providerId || `oauth_${Date.now()}`,
+        avatarUrl: avatarUrl || null,
+      }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      const err = new Error(json.message || 'OAuth authentication failed.');
+      err.status = res.status;
+      throw err;
+    }
+
+    this.setAuthSession(json.data);
+    return json.data;
   },
 
   // Admin Portal Login
   async adminLogin(email, password) {
-    try {
-      const res = await fetch(`${API_BASE}/auth/admin/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+    const res = await fetch(`${API_BASE}/auth/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), password }),
+    });
 
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || 'Unauthorized admin credentials.');
-      }
-
-      this.setAuthSession(json.data);
-      return json.data;
-    } catch (err) {
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        const mockAdmin = {
-          id: 'admin_demo_01',
-          email,
-          firstName: 'Atelier',
-          lastName: 'Admin',
-          role: 'SUPER_ADMIN',
-          emailVerified: true,
-          active: true,
-        };
-        const mockData = {
-          accessToken: 'mock_admin_jwt_' + Date.now(),
-          refreshToken: 'mock_admin_refresh_' + Date.now(),
-          user: mockAdmin,
-        };
-        this.setAuthSession(mockData);
-        return mockData;
-      }
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      const err = new Error(json.message || 'Unauthorized admin credentials.');
+      err.status = res.status;
       throw err;
     }
+
+    this.setAuthSession(json.data);
+    return json.data;
   },
 
-  // Customer Registration
+  // Customer Registration (Triggers real Gmail SMTP OTP)
   async register({ firstName, lastName, email, password, phone }) {
-    try {
-      const res = await fetch(`${API_BASE}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, email, password, phone }),
-      });
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: firstName.trim(),
+        lastName: (lastName || '').trim(),
+        email: email.trim(),
+        password,
+        phone: (phone || '').trim(),
+      }),
+    });
 
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || 'Registration failed.');
-      }
-
-      return json;
-    } catch (err) {
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        return {
-          success: true,
-          message: 'Verification code sent to email (Simulation Code: 123456)',
-          data: { email, firstName, lastName },
-        };
-      }
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      const err = new Error(json.message || 'Registration failed.');
+      err.status = res.status;
       throw err;
     }
+
+    return json;
   },
 
   // Verify 6-digit OTP
   async verifyEmail(email, otp) {
-    try {
-      const res = await fetch(`${API_BASE}/auth/verify-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp }),
-      });
+    const res = await fetch(`${API_BASE}/auth/verify-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), otp: otp.trim() }),
+    });
 
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || 'Invalid or expired verification code.');
-      }
-
-      return json;
-    } catch (err) {
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        if (otp === '123456' || otp.length === 6) {
-          return { success: true, message: 'Email verified successfully.' };
-        }
-        throw new Error('Invalid verification code.');
-      }
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      const err = new Error(json.message || 'Invalid or expired verification code.');
+      err.status = res.status;
       throw err;
     }
+
+    return json;
   },
 
   // Resend 6-digit OTP
   async resendOtp(email, type = 'EMAIL_VERIFICATION') {
-    try {
-      const res = await fetch(`${API_BASE}/auth/resend-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, type }),
-      });
+    const res = await fetch(`${API_BASE}/auth/resend-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), type }),
+    });
 
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || 'Failed to resend verification code.');
-      }
-
-      return json;
-    } catch (err) {
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        return { success: true, message: 'New verification code sent to your email.' };
-      }
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      const err = new Error(json.message || 'Failed to resend verification code.');
+      err.status = res.status;
       throw err;
     }
+
+    return json;
   },
 
   // Request password reset OTP
   async forgotPassword(email) {
-    try {
-      const res = await fetch(`${API_BASE}/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
+    const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim() }),
+    });
 
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || 'Failed to send reset code.');
-      }
-
-      return json;
-    } catch (err) {
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        return { success: true, message: 'If an account exists, a reset code has been sent (Demo: 123456).' };
-      }
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      const err = new Error(json.message || 'Failed to send reset code.');
+      err.status = res.status;
       throw err;
     }
+
+    return json;
   },
 
   // Set new password with OTP
   async resetPassword(email, otp, newPassword) {
-    try {
-      const res = await fetch(`${API_BASE}/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp, newPassword }),
-      });
+    const res = await fetch(`${API_BASE}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), otp: otp.trim(), newPassword }),
+    });
 
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || 'Failed to reset password.');
-      }
-
-      return json;
-    } catch (err) {
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        if (otp === '123456' || otp.length === 6) {
-          return { success: true, message: 'Password reset successfully.' };
-        }
-        throw new Error('Invalid or expired reset code.');
-      }
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      const err = new Error(json.message || 'Failed to reset password.');
+      err.status = res.status;
       throw err;
     }
+
+    return json;
   },
 
   // Logout
@@ -275,7 +236,7 @@ export const authService = {
         });
       }
     } catch {
-      // Ignored on network failure
+      // Ignored
     } finally {
       this.clearAuthSession();
     }

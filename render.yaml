@@ -1,0 +1,71 @@
+services:
+  # =========================================================================
+  # 1. REVERIE Spring Boot API Backend Service
+  # =========================================================================
+  - type: web
+    name: reverie-backend
+    runtime: java
+    rootDir: reverie-backend
+    buildCommand: mvn clean package -DskipTests
+    startCommand: java -Dserver.port=$PORT -Dspring.profiles.active=prod -jar target/reverie-backend-1.0.0-SNAPSHOT.jar
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: APP_ENVIRONMENT
+        value: production
+      - key: DB_HOST
+        fromDatabase:
+          name: reverie-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: reverie-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: reverie-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: reverie-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: reverie-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_ORIGIN
+        value: https://reverie-frontend.onrender.com,http://localhost:3000
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+
+  # =========================================================================
+  # 2. REVERIE Next.js Luxury Frontend Web Application
+  # =========================================================================
+  - type: web
+    name: reverie-frontend
+    runtime: node
+    rootDir: reverie-next
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    plan: free
+    envVars:
+      - key: NODE_VERSION
+        value: 20.17.0
+      - key: NEXT_PUBLIC_API_URL
+        value: https://reverie-backend.onrender.com/api
+
+databases:
+  # =========================================================================
+  # 3. REVERIE Managed PostgreSQL Database
+  # =========================================================================
+  - name: reverie-db
+    databaseName: reverie_db
+    user: reverie_user
+    plan: free
+    ipAllowList: [] # Accessible by all Render services

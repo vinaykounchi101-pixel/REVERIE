@@ -1,9 +1,32 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Lock, Mail, User, Phone, CheckCircle, AlertCircle, ArrowRight, ShieldCheck, KeyRound } from 'lucide-react';
+import { X, Lock, Mail, User, Phone, CheckCircle, AlertCircle, ArrowRight, ShieldCheck, KeyRound, Sparkles } from 'lucide-react';
 import { authService } from '../../services/authService';
 import Button from '../ui/Button';
+
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+        fill="#4285F4"
+      />
+      <path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        fill="#34A853"
+      />
+      <path
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+        fill="#EA4335"
+      />
+    </svg>
+  );
+}
 
 export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAuthSuccess }) {
   const [mode, setMode] = useState(initialMode);
@@ -16,17 +39,40 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [suggestRegister, setSuggestRegister] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
   const [countdown, setCountdown] = useState(60);
+  const [googleClientId, setGoogleClientId] = useState('');
 
   const otpInputRefs = useRef([]);
 
   useEffect(() => {
     setMode(initialMode);
     setError(null);
+    setSuggestRegister(false);
     setSuccessMessage(null);
   }, [initialMode, isOpen]);
+
+  // Load Google Identity Services Script & Client ID
+  useEffect(() => {
+    if (!isOpen) return;
+
+    authService.getAuthConfig().then((cfg) => {
+      if (cfg && cfg.googleClientId) {
+        setGoogleClientId(cfg.googleClientId);
+      }
+    });
+
+    if (typeof window !== 'undefined' && !window.google?.accounts?.oauth2) {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     let timer;
@@ -69,7 +115,9 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setSuggestRegister(false);
     setLoading(true);
+
     try {
       if (mode === 'admin-login') {
         const res = await authService.adminLogin(email, password);
@@ -81,9 +129,116 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
         onClose();
       }
     } catch (err) {
-      setError(err.message || 'Authentication failed. Please check credentials.');
+      const msg = err.message || 'Invalid email or password.';
+      setError(msg);
+
+      if (mode === 'login') {
+        try {
+          const exists = await authService.checkEmail(email);
+          if (!exists) {
+            setSuggestRegister(true);
+          }
+        } catch {
+          setSuggestRegister(true);
+        }
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Google OAuth Popup Trigger
+  const handleGoogleOAuth = async () => {
+    setError(null);
+    setOauthLoading(true);
+
+    try {
+      if (typeof window !== 'undefined' && window.google?.accounts?.oauth2 && googleClientId) {
+        // Official Google Identity Services OAuth Popup
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: googleClientId,
+          scope: 'openid email profile',
+          callback: async (tokenResponse) => {
+            if (tokenResponse && tokenResponse.access_token) {
+              try {
+                // Fetch user profile from Google UserInfo endpoint
+                const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                });
+                const googleProfile = await userRes.json();
+
+                const res = await authService.oauthLogin({
+                  email: googleProfile.email,
+                  firstName: googleProfile.given_name || googleProfile.name || 'Collector',
+                  lastName: googleProfile.family_name || 'Member',
+                  provider: 'GOOGLE',
+                  providerId: googleProfile.sub,
+                  avatarUrl: googleProfile.picture,
+                });
+
+                setSuccessMessage('Successfully authenticated with Google!');
+                setTimeout(() => {
+                  if (onAuthSuccess) onAuthSuccess(res.user);
+                  onClose();
+                }, 600);
+              } catch (authErr) {
+                setError(authErr.message || 'Failed to authenticate Google account.');
+              } finally {
+                setOauthLoading(false);
+              }
+            } else {
+              setOauthLoading(false);
+            }
+          },
+          error_callback: (err) => {
+            setOauthLoading(false);
+            if (err && err.type !== 'popup_closed') {
+              setError('Google Sign-In was cancelled or encountered an issue.');
+            }
+          },
+        });
+
+        tokenClient.requestAccessToken({ prompt: 'select_account' });
+      } else {
+        // Fallback if client ID is still being loaded
+        const cfg = await authService.getAuthConfig();
+        if (cfg && cfg.googleClientId && window.google?.accounts?.oauth2) {
+          setGoogleClientId(cfg.googleClientId);
+          const tokenClient = window.google.accounts.oauth2.initTokenClient({
+            client_id: cfg.googleClientId,
+            scope: 'openid email profile',
+            callback: async (tokenResponse) => {
+              if (tokenResponse && tokenResponse.access_token) {
+                const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                });
+                const googleProfile = await userRes.json();
+                const res = await authService.oauthLogin({
+                  email: googleProfile.email,
+                  firstName: googleProfile.given_name || 'Collector',
+                  lastName: googleProfile.family_name || 'Member',
+                  provider: 'GOOGLE',
+                  providerId: googleProfile.sub,
+                  avatarUrl: googleProfile.picture,
+                });
+                setSuccessMessage('Successfully authenticated with Google!');
+                setTimeout(() => {
+                  if (onAuthSuccess) onAuthSuccess(res.user);
+                  onClose();
+                }, 600);
+              }
+              setOauthLoading(false);
+            },
+          });
+          tokenClient.requestAccessToken({ prompt: 'select_account' });
+        } else {
+          setError('Google Client ID is not configured in .env yet. Please ensure GOOGLE_CLIENT_ID is set.');
+          setOauthLoading(false);
+        }
+      }
+    } catch (err) {
+      setError(err.message || 'Google authentication error.');
+      setOauthLoading(false);
     }
   };
 
@@ -96,6 +251,11 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
       return;
     }
 
+    if (!password || password.length < 8) {
+      setError('Password must contain at least 8 characters.');
+      return;
+    }
+
     setLoading(true);
     try {
       await authService.register({
@@ -105,7 +265,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
         password,
         phone,
       });
-      setSuccessMessage('Registration initiated. Verification code sent.');
+      setSuccessMessage('Registration successful! Verification code dispatched to your email.');
       setCountdown(60);
       setMode('verify-otp');
     } catch (err) {
@@ -127,11 +287,14 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
     setLoading(true);
     try {
       await authService.verifyEmail(email, otp);
-      setSuccessMessage('Email verified successfully! Logging you in...');
+      setSuccessMessage('Email verified successfully! Signing you in...');
+
       setTimeout(async () => {
         try {
-          const res = await authService.login(email, password);
-          if (onAuthSuccess) onAuthSuccess(res.user);
+          if (password) {
+            const res = await authService.login(email, password);
+            if (onAuthSuccess) onAuthSuccess(res.user);
+          }
         } catch {
           // Ignored
         }
@@ -150,7 +313,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
     setLoading(true);
     try {
       await authService.forgotPassword(email);
-      setSuccessMessage('Password reset code sent to your email.');
+      setSuccessMessage('Password reset code dispatched to your email.');
       setMode('reset-password');
     } catch (err) {
       setError(err.message || 'Failed to send reset code.');
@@ -175,7 +338,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
     setLoading(true);
     try {
       await authService.resetPassword(email, otp, password);
-      setSuccessMessage('Password reset successfully! Please sign in.');
+      setSuccessMessage('Password reset successfully! Please sign in with your new credentials.');
       setTimeout(() => {
         setMode('login');
       }, 1200);
@@ -222,6 +385,25 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
           </div>
         )}
 
+        {suggestRegister && mode === 'login' && (
+          <div className="auth-not-found-prompt font-ui">
+            <div className="auth-not-found-prompt-text">
+              No account was found with <strong>{email}</strong>.
+            </div>
+            <button
+              type="button"
+              className="auth-not-found-prompt-btn"
+              onClick={() => {
+                setError(null);
+                setSuggestRegister(false);
+                setMode('register');
+              }}
+            >
+              Create a new Collector Account with this email →
+            </button>
+          </div>
+        )}
+
         {successMessage && (
           <div className="auth-alert auth-alert--success font-ui">
             <CheckCircle size={16} />
@@ -231,6 +413,24 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
 
         {(mode === 'login' || mode === 'admin-login') && (
           <form onSubmit={handleLoginSubmit} className="auth-form font-ui">
+            {mode === 'login' && (
+              <>
+                <button
+                  type="button"
+                  className="auth-oauth-btn font-ui"
+                  onClick={handleGoogleOAuth}
+                  disabled={oauthLoading}
+                >
+                  <GoogleIcon />
+                  <span>{oauthLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
+                </button>
+
+                <div className="auth-divider">
+                  <span>or email credentials</span>
+                </div>
+              </>
+            )}
+
             <div className="form-group">
               <label htmlFor="auth-email">Email Address</label>
               <div className="input-with-icon">
@@ -241,7 +441,10 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
                   required
                   placeholder="name@domain.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setSuggestRegister(false);
+                  }}
                   autoComplete="email"
                 />
               </div>
@@ -256,6 +459,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
                     className="auth-link-btn"
                     onClick={() => {
                       setError(null);
+                      setSuggestRegister(false);
                       setMode('forgot-password');
                     }}
                   >
@@ -291,6 +495,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
                   className="auth-switch-link"
                   onClick={() => {
                     setError(null);
+                    setSuggestRegister(false);
                     setMode('register');
                   }}
                 >
@@ -302,6 +507,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
                     className="auth-link-muted"
                     onClick={() => {
                       setError(null);
+                      setSuggestRegister(false);
                       setMode('admin-login');
                     }}
                   >
@@ -318,6 +524,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
                   className="auth-switch-link"
                   onClick={() => {
                     setError(null);
+                    setSuggestRegister(false);
                     setMode('login');
                   }}
                 >
@@ -330,6 +537,20 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
 
         {mode === 'register' && (
           <form onSubmit={handleRegisterSubmit} className="auth-form font-ui">
+            <button
+              type="button"
+              className="auth-oauth-btn font-ui"
+              onClick={handleGoogleOAuth}
+              disabled={oauthLoading}
+            >
+              <GoogleIcon />
+              <span>{oauthLoading ? 'Connecting to Google...' : 'Sign Up with Google (Instant)'}</span>
+            </button>
+
+            <div className="auth-divider">
+              <span>or enter details</span>
+            </div>
+
             <div className="form-grid-2">
               <div className="form-group">
                 <label htmlFor="reg-first-name">First Name</label>
@@ -427,6 +648,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
                 className="auth-switch-link"
                 onClick={() => {
                   setError(null);
+                  setSuggestRegister(false);
                   setMode('login');
                 }}
               >

@@ -22,15 +22,23 @@ public class WebConfig implements WebMvcConfigurer {
         CorsConfiguration configuration = new CorsConfiguration();
         List<String> origins = Arrays.asList(allowedOrigins.split(","));
         
-        // Use origin patterns to support all Vercel deployments, tunnel domains, and localhost dynamically
-        configuration.setAllowedOriginPatterns(Arrays.asList(
+        // Support dynamic cloud deployments (Render, Vercel, Tunnels, Localhost)
+        List<String> patterns = new java.util.ArrayList<>(Arrays.asList(
             "http://localhost:*",
             "http://127.0.0.1:*",
+            "https://*.onrender.com",
             "https://*.vercel.app",
             "https://*.loca.lt",
             "https://*.ngrok-free.app",
             "https://*.ngrok.io"
         ));
+        for (String origin : origins) {
+            String trimmed = origin.trim();
+            if (!trimmed.isEmpty() && !patterns.contains(trimmed)) {
+                patterns.add(trimmed);
+            }
+        }
+        configuration.setAllowedOriginPatterns(patterns);
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(Arrays.asList("*"));

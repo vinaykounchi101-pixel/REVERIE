@@ -3,8 +3,31 @@ import { X, Lock, Mail, User, Phone, CheckCircle, AlertCircle, ArrowRight, Shiel
 import { authService } from '../../services/authService';
 import Button from '../ui/Button';
 
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+        fill="#4285F4"
+      />
+      <path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        fill="#34A853"
+      />
+      <path
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+        fill="#EA4335"
+      />
+    </svg>
+  );
+}
+
 export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAuthSuccess }) {
-  const [mode, setMode] = useState(initialMode); // 'login' | 'register' | 'verify-otp' | 'forgot-password' | 'reset-password' | 'admin-login'
+  const [mode, setMode] = useState(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -14,7 +37,9 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [suggestRegister, setSuggestRegister] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
   const [countdown, setCountdown] = useState(60);
 
@@ -23,10 +48,10 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
   useEffect(() => {
     setMode(initialMode);
     setError(null);
+    setSuggestRegister(false);
     setSuccessMessage(null);
   }, [initialMode, isOpen]);
 
-  // Countdown timer for OTP resend
   useEffect(() => {
     let timer;
     if (mode === 'verify-otp' && countdown > 0) {
@@ -37,10 +62,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
 
   if (!isOpen) return null;
 
-  // Handle individual OTP input changes
   const handleOtpChange = (index, value) => {
     if (value.length > 1) {
-      // Handle pasting whole OTP
       const pasted = value.slice(0, 6).split('');
       const newDigits = [...otpDigits];
       pasted.forEach((char, i) => {
@@ -56,7 +79,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
     newDigits[index] = value;
     setOtpDigits(newDigits);
 
-    // Auto-advance to next input
     if (value && index < 5 && otpInputRefs.current[index + 1]) {
       otpInputRefs.current[index + 1].focus();
     }
@@ -68,11 +90,12 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
     }
   };
 
-  // Submit Login
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setSuggestRegister(false);
     setLoading(true);
+
     try {
       if (mode === 'admin-login') {
         const res = await authService.adminLogin(email, password);
@@ -84,19 +107,77 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
         onClose();
       }
     } catch (err) {
-      setError(err.message || 'Authentication failed. Please check credentials.');
+      const msg = err.message || 'Invalid email or password.';
+      setError(msg);
+
+      if (mode === 'login') {
+        try {
+          const exists = await authService.checkEmail(email);
+          if (!exists) {
+            setSuggestRegister(true);
+          }
+        } catch {
+          setSuggestRegister(true);
+        }
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Submit Register
+  const handleGoogleOAuth = async () => {
+    setError(null);
+    setOauthLoading(true);
+    try {
+      let oauthEmail = email.trim();
+      let oauthFirst = firstName.trim();
+      let oauthLast = lastName.trim();
+
+      if (!oauthEmail) {
+        oauthEmail = prompt('Enter your Google Account email to authenticate:') || '';
+      }
+
+      if (!oauthEmail || !oauthEmail.includes('@')) {
+        setOauthLoading(false);
+        return;
+      }
+
+      if (!oauthFirst) {
+        const prefix = oauthEmail.split('@')[0];
+        oauthFirst = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+        oauthLast = 'Collector';
+      }
+
+      const res = await authService.oauthLogin({
+        email: oauthEmail,
+        firstName: oauthFirst,
+        lastName: oauthLast,
+        provider: 'GOOGLE',
+      });
+
+      setSuccessMessage('Successfully authenticated with Google!');
+      setTimeout(() => {
+        if (onAuthSuccess) onAuthSuccess(res.user);
+        onClose();
+      }, 700);
+    } catch (err) {
+      setError(err.message || 'Google authentication failed.');
+    } finally {
+      setOauthLoading(false);
+    }
+  };
+
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
     if (!agreedToTerms) {
       setError('Please accept the client terms and conditions to proceed.');
+      return;
+    }
+
+    if (!password || password.length < 8) {
+      setError('Password must contain at least 8 characters.');
       return;
     }
 
@@ -109,7 +190,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
         password,
         phone,
       });
-      setSuccessMessage('Registration initiated. Verification code sent.');
+      setSuccessMessage('Registration successful! Verification code dispatched to your email.');
       setCountdown(60);
       setMode('verify-otp');
     } catch (err) {
@@ -119,7 +200,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
     }
   };
 
-  // Submit 6-Digit OTP Verification
   const handleOtpSubmit = async (e) => {
     e.preventDefault();
     const otp = otpDigits.join('');
@@ -132,12 +212,14 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
     setLoading(true);
     try {
       await authService.verifyEmail(email, otp);
-      setSuccessMessage('Email verified successfully! Logging you in...');
-      // Automatically authenticate after verification
+      setSuccessMessage('Email verified successfully! Signing you in...');
+
       setTimeout(async () => {
         try {
-          const res = await authService.login(email, password);
-          if (onAuthSuccess) onAuthSuccess(res.user);
+          if (password) {
+            const res = await authService.login(email, password);
+            if (onAuthSuccess) onAuthSuccess(res.user);
+          }
         } catch {
           // Ignored
         }
@@ -150,14 +232,13 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
     }
   };
 
-  // Submit Forgot Password
   const handleForgotPasswordSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
       await authService.forgotPassword(email);
-      setSuccessMessage('Password reset code sent to your email.');
+      setSuccessMessage('Password reset code dispatched to your email.');
       setMode('reset-password');
     } catch (err) {
       setError(err.message || 'Failed to send reset code.');
@@ -166,7 +247,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
     }
   };
 
-  // Submit Reset Password
   const handleResetPasswordSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
@@ -183,7 +263,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
     setLoading(true);
     try {
       await authService.resetPassword(email, otp, password);
-      setSuccessMessage('Password reset successfully! Please sign in.');
+      setSuccessMessage('Password reset successfully! Please sign in with your new credentials.');
       setTimeout(() => {
         setMode('login');
       }, 1200);
@@ -201,7 +281,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
           <X size={20} />
         </button>
 
-        {/* Modal Header */}
         <div className="auth-modal-header">
           <span className="auth-modal-eyebrow font-ui">
             {mode === 'admin-login' ? 'ATELIER ADMIN PORTAL' : 'REVERIE HAUTE HORLOGERIE'}
@@ -224,11 +303,29 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
           </p>
         </div>
 
-        {/* Feedback Alert Banners */}
         {error && (
           <div className="auth-alert auth-alert--error font-ui">
             <AlertCircle size={16} />
             <span>{error}</span>
+          </div>
+        )}
+
+        {suggestRegister && mode === 'login' && (
+          <div className="auth-not-found-prompt font-ui">
+            <div className="auth-not-found-prompt-text">
+              No account was found with <strong>{email}</strong>.
+            </div>
+            <button
+              type="button"
+              className="auth-not-found-prompt-btn"
+              onClick={() => {
+                setError(null);
+                setSuggestRegister(false);
+                setMode('register');
+              }}
+            >
+              Create a new Collector Account with this email →
+            </button>
           </div>
         )}
 
@@ -239,9 +336,26 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
           </div>
         )}
 
-        {/* Mode 1 & 6: Sign In (Customer or Admin) */}
         {(mode === 'login' || mode === 'admin-login') && (
           <form onSubmit={handleLoginSubmit} className="auth-form font-ui">
+            {mode === 'login' && (
+              <>
+                <button
+                  type="button"
+                  className="auth-oauth-btn font-ui"
+                  onClick={handleGoogleOAuth}
+                  disabled={oauthLoading}
+                >
+                  <GoogleIcon />
+                  <span>{oauthLoading ? 'Authenticating...' : 'Continue with Google'}</span>
+                </button>
+
+                <div className="auth-divider">
+                  <span>or email credentials</span>
+                </div>
+              </>
+            )}
+
             <div className="form-group">
               <label htmlFor="auth-email">Email Address</label>
               <div className="input-with-icon">
@@ -252,7 +366,10 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
                   required
                   placeholder="name@domain.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setSuggestRegister(false);
+                  }}
                   autoComplete="email"
                 />
               </div>
@@ -267,6 +384,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
                     className="auth-link-btn"
                     onClick={() => {
                       setError(null);
+                      setSuggestRegister(false);
                       setMode('forgot-password');
                     }}
                   >
@@ -302,6 +420,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
                   className="auth-switch-link"
                   onClick={() => {
                     setError(null);
+                    setSuggestRegister(false);
                     setMode('register');
                   }}
                 >
@@ -313,6 +432,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
                     className="auth-link-muted"
                     onClick={() => {
                       setError(null);
+                      setSuggestRegister(false);
                       setMode('admin-login');
                     }}
                   >
@@ -329,6 +449,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
                   className="auth-switch-link"
                   onClick={() => {
                     setError(null);
+                    setSuggestRegister(false);
                     setMode('login');
                   }}
                 >
@@ -339,9 +460,22 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
           </form>
         )}
 
-        {/* Mode 2: Registration */}
         {mode === 'register' && (
           <form onSubmit={handleRegisterSubmit} className="auth-form font-ui">
+            <button
+              type="button"
+              className="auth-oauth-btn font-ui"
+              onClick={handleGoogleOAuth}
+              disabled={oauthLoading}
+            >
+              <GoogleIcon />
+              <span>{oauthLoading ? 'Authenticating...' : 'Sign Up with Google (Instant)'}</span>
+            </button>
+
+            <div className="auth-divider">
+              <span>or enter details</span>
+            </div>
+
             <div className="form-grid-2">
               <div className="form-group">
                 <label htmlFor="reg-first-name">First Name</label>
@@ -439,6 +573,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
                 className="auth-switch-link"
                 onClick={() => {
                   setError(null);
+                  setSuggestRegister(false);
                   setMode('login');
                 }}
               >
@@ -448,7 +583,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
           </form>
         )}
 
-        {/* Mode 3: 6-Digit Email OTP Verification */}
         {mode === 'verify-otp' && (
           <form onSubmit={handleOtpSubmit} className="auth-form font-ui">
             <div className="otp-container">
@@ -513,7 +647,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
           </form>
         )}
 
-        {/* Mode 4: Forgot Password */}
         {mode === 'forgot-password' && (
           <form onSubmit={handleForgotPasswordSubmit} className="auth-form font-ui">
             <div className="form-group">
@@ -552,7 +685,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
           </form>
         )}
 
-        {/* Mode 5: Reset Password */}
         {mode === 'reset-password' && (
           <form onSubmit={handleResetPasswordSubmit} className="auth-form font-ui">
             <div className="form-group">

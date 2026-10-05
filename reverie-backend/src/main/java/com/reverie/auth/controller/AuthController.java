@@ -46,6 +46,30 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Authentication successful", response));
     }
 
+    @PostMapping({"/oauth", "/oauth/google"})
+    @Operation(summary = "OAuth / Social Sign-In", description = "Authenticates via OAuth provider (e.g. Google), automatically provisioning a verified account if not found.")
+    public ResponseEntity<ApiResponse<AuthResponse>> oauthLogin(
+            @Valid @RequestBody OAuthLoginRequest request,
+            HttpServletRequest httpRequest) {
+        AuthResponse response = authService.oauthLogin(request, httpRequest);
+        return ResponseEntity.ok(ApiResponse.success("OAuth authentication successful", response));
+    }
+
+    @GetMapping("/check-email")
+    @Operation(summary = "Check Email Existence", description = "Checks whether an account exists with the provided email address.")
+    public ResponseEntity<ApiResponse<Boolean>> checkEmail(@RequestParam("email") String email) {
+        boolean exists = authService.checkEmailExists(email);
+        return ResponseEntity.ok(ApiResponse.success("Email status checked", exists));
+    }
+
+    @GetMapping("/config")
+    @Operation(summary = "Public Auth Configuration", description = "Returns public client authentication keys.")
+    public ResponseEntity<ApiResponse<java.util.Map<String, String>>> getAuthConfig() {
+        java.util.Map<String, String> config = new java.util.HashMap<>();
+        config.put("googleClientId", authService.getGoogleClientId());
+        return ResponseEntity.ok(ApiResponse.success("Auth configuration retrieved", config));
+    }
+
     @PostMapping("/admin/login")
     @Operation(summary = "Admin Portal Login", description = "Authenticates administrator credentials and returns admin-scoped JWT token.")
     public ResponseEntity<ApiResponse<AuthResponse>> adminLogin(

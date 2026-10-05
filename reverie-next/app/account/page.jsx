@@ -7,9 +7,11 @@ import { sampleOrders } from '../../data/allProductsData';
 import { authService } from '../../services/authService';
 import AuthModal from '../../components/auth/AuthModal';
 import Button from '../../components/ui/Button';
+import { useWishlist } from '../../context/WishlistContext';
 
 export default function AccountPage() {
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
+  const { wishlistItems, wishlistCount } = useWishlist();
   const [activeTab, setActiveTab] = useState('orders');
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login');
@@ -240,15 +242,42 @@ export default function AccountPage() {
 
             {activeTab === 'wishlist' && (
               <div className="account-wishlist-pane">
-                <h2 className="account-pane-title font-display">Your Curated Wishlist</h2>
-                <p className="account-pane-sub">Saved references and bespoke configurations.</p>
-                <div style={{ marginTop: '24px' }}>
-                  <Link href="/collections">
-                    <Button variant="primary" arrow>
-                      Browse Collections
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '20px' }}>
+                  <div>
+                    <h2 className="account-pane-title font-display">Your Curated Wishlist</h2>
+                    <p className="account-pane-sub">Saved references and bespoke configurations ({wishlistCount} items).</p>
+                  </div>
+                  <Link href="/wishlist">
+                    <Button variant="secondary" style={{ fontSize: '12px', padding: '6px 14px' }}>
+                      Open Dedicated Wishlist View
                     </Button>
                   </Link>
                 </div>
+
+                {wishlistCount === 0 ? (
+                  <div style={{ padding: '32px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <p style={{ color: 'var(--color-stone-400)', marginBottom: '16px' }}>You have not saved any timepieces yet.</p>
+                    <Link href="/collections">
+                      <Button variant="primary" arrow>Browse Collections</Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
+                    {wishlistItems.map((w) => (
+                      <div key={w.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '14px', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ aspectRatio: '1/1', background: 'radial-gradient(circle, #20242e 0%, #0d0f14 100%)', borderRadius: '6px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
+                          <img src={w.image} alt={w.name} style={{ maxHeight: '80%', maxWidth: '80%', objectFit: 'contain' }} />
+                        </div>
+                        <span style={{ fontSize: '10px', color: '#d4af37', fontWeight: 600 }}>{w.ref}</span>
+                        <h4 className="font-display" style={{ fontSize: '15px', margin: '2px 0 4px', color: 'var(--color-text-primary)' }}>{w.name}</h4>
+                        <span style={{ fontSize: '14px', color: '#d4af37', fontWeight: 600, marginBottom: '10px' }}>${w.price?.toLocaleString()}</span>
+                        <Link href={`/product/${w.id}`} style={{ marginTop: 'auto', textDecoration: 'none' }}>
+                          <Button variant="secondary" style={{ width: '100%', fontSize: '11px', padding: '6px 0' }}>View Timepiece</Button>
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

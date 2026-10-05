@@ -99,7 +99,7 @@ public class EmailService {
     }
 
     private String buildLuxuryEmailHtml(String headerBadge, String greeting, String bodyText, String code, String footerNote) {
-        return """
+        String template = """
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -115,9 +115,9 @@ public class EmailService {
                                 
                                 <!-- Brand Header -->
                                 <tr>
-                                    <td align="center" style="padding: 40px 30px 24px 30px; border-bottom: 1px solid #1c1e26; background: radial-gradient(circle at top, #1c1d25 0%%, #121318 100%%);">
+                                    <td align="center" style="padding: 40px 30px 24px 30px; border-bottom: 1px solid #1c1e26; background: #181920;">
                                         <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; color: #c5a059; margin-bottom: 8px;">
-                                            %s
+                                            {{HEADER_BADGE}}
                                         </div>
                                         <div style="font-size: 28px; font-weight: 300; letter-spacing: 0.3em; text-transform: uppercase; color: #ffffff; margin: 0;">
                                             R E V E R I E
@@ -132,10 +132,10 @@ public class EmailService {
                                 <tr>
                                     <td style="padding: 36px 36px 20px 36px;">
                                         <p style="font-size: 15px; font-weight: 600; color: #ffffff; margin: 0 0 14px 0; letter-spacing: 0.02em;">
-                                            %s
+                                            {{GREETING}}
                                         </p>
                                         <p style="font-size: 14px; line-height: 1.6; color: #a1a5b3; margin: 0 0 28px 0;">
-                                            %s
+                                            {{BODY_TEXT}}
                                         </p>
 
                                         <!-- OTP Code Box -->
@@ -144,12 +144,12 @@ public class EmailService {
                                                 Single-Use Security Token
                                             </div>
                                             <div style="font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: 700; letter-spacing: 0.35em; color: #d4af37; padding-left: 0.35em;">
-                                                %s
+                                                {{CODE}}
                                             </div>
                                         </div>
 
                                         <p style="font-size: 12px; line-height: 1.5; color: #737785; margin: 20px 0 0 0;">
-                                            %s
+                                            {{FOOTER_NOTE}}
                                         </p>
                                     </td>
                                 </tr>
@@ -158,7 +158,7 @@ public class EmailService {
                                 <tr>
                                     <td align="center" style="padding: 24px 30px; background-color: #0e0f14; border-top: 1px solid #1c1e26;">
                                         <p style="font-size: 11px; color: #5f6371; line-height: 1.6; margin: 0;">
-                                            © %d REVERIE SA. All rights reserved.<br>
+                                            © {{YEAR}} REVERIE SA. All rights reserved.<br>
                                             Manufacture Horlogère Suisse, Rue du Rhône, 1204 Genève, Switzerland.<br>
                                             Confidential security dispatch.
                                         </p>
@@ -171,6 +171,14 @@ public class EmailService {
                 </table>
             </body>
             </html>
-            """.formatted(headerBadge, greeting, bodyText, code, footerNote, java.time.Year.now().getValue());
+            """;
+
+        return template
+                .replace("{{HEADER_BADGE}}", headerBadge != null ? headerBadge : "SECURITY")
+                .replace("{{GREETING}}", greeting != null ? greeting : "Dear Collector,")
+                .replace("{{BODY_TEXT}}", bodyText != null ? bodyText : "")
+                .replace("{{CODE}}", code != null ? code : "")
+                .replace("{{FOOTER_NOTE}}", footerNote != null ? footerNote : "")
+                .replace("{{YEAR}}", String.valueOf(java.time.Year.now().getValue()));
     }
 }

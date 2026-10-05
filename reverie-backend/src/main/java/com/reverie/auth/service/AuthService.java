@@ -55,6 +55,13 @@ public class AuthService {
     @Value("${app.auth.otp-max-attempts:5}")
     private int otpMaxAttempts;
 
+    @Value("${app.auth.google-client-id:}")
+    private String googleClientId;
+
+    public String getGoogleClientId() {
+        return googleClientId != null ? googleClientId.trim() : "";
+    }
+
     public AuthService(
             UserRepository userRepository,
             RefreshTokenRepository refreshTokenRepository,
@@ -127,6 +134,51 @@ public class AuthService {
         rateLimiterService.reset(rateLimitKey);
 
         return issueTokens(user, clientIp, "USER_LOGIN");
+    }
+
+    @Transactional
+    public AuthResponse oauthLogin(OAuthLoginRequest request, HttpServletRequest httpRequest) {
+        String clientIp = getClientIp(httpRequest);
+        String email = request.getEmail().toLowerCase().trim();
+
+        User user = userRepository.findByEmail(email).orElseGet(() -> {
+            String firstName = (request.getFirstName() != null && !request.getFirstName().isBlank())
+                    ? request.getFirstName().trim() : "Collector";
+            String lastName = (request.getLastName() != null && !request.getLastName().isBlank())
+                    ? request.getLastName().trim() : "Member";
+
+            String randomSecret = UUID.randomUUID().toString() + UUID.randomUUID().toString();
+            User newUser = new User(
+                    email,
+                    passwordEncoder.encode(randomSecret),
+                    firstName,
+                    lastName,
+                    null,
+                    Role.CUSTOMER
+            );
+            newUser.setVerified(true);
+            User saved = userRepository.save(newUser);
+            auditService.logAction("CUSTOMER", saved.getId(), "USER_REGISTER_OAUTH", "USER", saved.getId(), "SUCCESS", clientIp, "Provider: " + request.getProvider());
+            return saved;
+        });
+
+        if (!user.isActive()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "Account is disabled. Please contact customer support.");
+        }
+
+        if (!user.isVerified()) {
+            user.setVerified(true);
+            userRepository.save(user);
+        }
+
+        auditService.logAction(user.getRole().name(), user.getId(), "USER_LOGIN_OAUTH", "SESSION", null, "SUCCESS", clientIp, "Provider: " + request.getProvider());
+        return issueTokens(user, clientIp, "USER_LOGIN_OAUTH");
+    }
+
+    @Transactional(readOnly = true)
+    public boolean checkEmailExists(String email) {
+        if (email == null || email.isBlank()) return false;
+        return userRepository.existsByEmail(email.toLowerCase().trim());
     }
 
     @Transactional

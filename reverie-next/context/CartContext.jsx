@@ -9,27 +9,18 @@ export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Initialize with saved cart or default sample item on client
+  // Initialize with saved cart or empty
   useEffect(() => {
     try {
       const saved = localStorage.getItem('reverie_cart');
       if (saved) {
         setCartItems(JSON.parse(saved));
-      } else if (allWatchCatalog.length > 0) {
-        setCartItems([
-          {
-            id: allWatchCatalog[0].id,
-            name: allWatchCatalog[0].name,
-            price: allWatchCatalog[0].price,
-            quantity: 1,
-            image: allWatchCatalog[0].image,
-            ref: allWatchCatalog[0].ref,
-            selectedStrap: 'Steel Bracelet',
-          }
-        ]);
+      } else {
+        setCartItems([]);
       }
     } catch (e) {
       console.error(e);
+      setCartItems([]);
     }
     setIsLoaded(true);
   }, []);
