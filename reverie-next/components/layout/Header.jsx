@@ -57,8 +57,9 @@ export default function Header() {
   const navItems = [
     { label: 'Home', href: '/' },
     { label: 'Collections', href: '/collections' },
-    { label: "Men's Horology", href: '/collections?gender=Men' },
-    { label: "Women's Horology", href: '/collections?gender=Women' },
+    { label: "Men's", href: '/collections?gender=Men' },
+    { label: "Women's", href: '/collections?gender=Women' },
+    { label: 'About Atelier', href: '/about' },
     { label: 'Wishlist', href: '/wishlist' },
     { label: 'Brand Story', href: '/story' },
     { label: 'Track Order', href: '/order-tracking' },
@@ -91,7 +92,7 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="site-header-nav" aria-label="Main Navigation">
             <ul className="nav-list">
-              {navItems.slice(0, 4).map((item) => {
+              {navItems.slice(0, 5).map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <li key={item.label} className="nav-item">

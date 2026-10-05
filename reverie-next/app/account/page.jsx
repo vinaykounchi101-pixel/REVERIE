@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { User, Package, Heart, MapPin, CreditCard, Settings, HelpCircle, ExternalLink, LogOut, ShieldCheck } from 'lucide-react';
+import { User, Package, Heart, MapPin, CreditCard, Settings, HelpCircle, ExternalLink, LogOut, ShieldCheck, Info, Clock, Sparkles, Compass } from 'lucide-react';
 import { sampleOrders } from '../../data/allProductsData';
 import { authService } from '../../services/authService';
 import AuthModal from '../../components/auth/AuthModal';
@@ -177,6 +177,13 @@ export default function AccountPage() {
               </button>
               <button
                 type="button"
+                className={`account-nav-item ${activeTab === 'about' ? 'account-nav-item--active' : ''}`}
+                onClick={() => setActiveTab('about')}
+              >
+                <Info size={16} /> About Atelier &amp; Heritage
+              </button>
+              <button
+                type="button"
                 className={`account-nav-item`}
                 style={{ color: '#ef4444', marginTop: 'var(--space-4)' }}
                 onClick={handleLogout}
@@ -315,6 +322,75 @@ export default function AccountPage() {
                     <strong>Default Residence</strong>
                     <p style={{ margin: '4px 0', opacity: 0.8 }}>45 Lake Geneva Boulevard, Apt 12, 1204 Genève, Switzerland</p>
                     <span style={{ fontSize: '12px', color: '#d4af37' }}>Primary Insured Delivery Location</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'about' && (
+              <div className="account-about-pane font-ui">
+                <div className="account-pane-head" style={{ marginBottom: '24px' }}>
+                  <span className="eyebrow eyebrow-light font-ui">MAISON REVERIE • GENÈVE</span>
+                  <h2 className="account-pane-title font-display" style={{ fontSize: '28px', marginTop: '4px' }}>
+                    About Our Haute Horlogerie Atelier
+                  </h2>
+                  <p className="account-pane-sub" style={{ color: 'var(--color-stone-400)', fontSize: '14px', lineHeight: 1.6 }}>
+                    Founded on the shores of Lake Geneva, REVERIE represents the pinnacle of contemporary Swiss chronometric mastery and aesthetic restraint.
+                  </p>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '28px' }}>
+                  <div style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#d4af37' }}>
+                      <Clock size={18} />
+                      <strong style={{ fontSize: '14px', color: '#fff' }}>Swiss Chronometer</strong>
+                    </div>
+                    <p style={{ fontSize: '13px', color: 'var(--color-stone-400)', lineHeight: 1.5, margin: 0 }}>
+                      Every mechanical caliber is assembled by master watchmakers and tested in 5 positions to certified precision tolerances.
+                    </p>
+                  </div>
+
+                  <div style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#d4af37' }}>
+                      <ShieldCheck size={18} />
+                      <strong style={{ fontSize: '14px', color: '#fff' }}>5-Year Global Warranty</strong>
+                    </div>
+                    <p style={{ fontSize: '13px', color: 'var(--color-stone-400)', lineHeight: 1.5, margin: 0 }}>
+                      Comprehensive atelier protection covering manufacture calibers, balance wheels, and sapphire crystal components.
+                    </p>
+                  </div>
+
+                  <div style={{ padding: '20px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#d4af37' }}>
+                      <Compass size={18} />
+                      <strong style={{ fontSize: '14px', color: '#fff' }}>Geneva Concierge</strong>
+                    </div>
+                    <p style={{ fontSize: '13px', color: 'var(--color-stone-400)', lineHeight: 1.5, margin: 0 }}>
+                      Dedicated horological advisors available for bespoke strap fittings, routine servicing, and international acquisitions.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ padding: '24px', background: 'linear-gradient(180deg, rgba(212,175,55,0.06) 0%, rgba(255,255,255,0.01) 100%)', border: '1px solid rgba(212,175,55,0.2)', borderRadius: '8px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+                  <div>
+                    <h3 className="font-display" style={{ fontSize: '20px', color: '#fff', margin: '0 0 6px 0' }}>
+                      Read the Complete Brand Story &amp; Manufacture Journal
+                    </h3>
+                    <p style={{ fontSize: '13px', color: 'var(--color-stone-400)', margin: 0, maxWidth: '480px' }}>
+                      Explore chapter archives, high-resolution movement macro photography, and the founding philosophy behind REVERIE.
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <Link href="/about">
+                      <Button variant="primary" arrow style={{ fontSize: '12px', padding: '8px 18px' }}>
+                        Explore About Page
+                      </Button>
+                    </Link>
+                    <Link href="/collections">
+                      <Button variant="secondary" style={{ fontSize: '12px', padding: '8px 18px' }}>
+                        View Catalog
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </div>
