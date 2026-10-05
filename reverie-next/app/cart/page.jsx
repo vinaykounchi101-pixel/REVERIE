@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Trash2, ShieldCheck, Truck, ArrowRight, ShoppingBag, User } from 'lucide-react';
 import Button from '../../components/ui/Button';
@@ -12,7 +12,13 @@ export default function CartPage() {
   const { cartItems, updateQuantity, removeItem, cartSubtotal } = useCart();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('register');
-  const currentUser = authService.getCurrentUser();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setCurrentUser(authService.getCurrentUser());
+  }, []);
 
   const shippingCost = 0; // Complimentary
   const estimatedTax = Math.round(cartSubtotal * 0.077); // 7.7% Swiss VAT
@@ -38,7 +44,11 @@ export default function CartPage() {
               Explore Collections
             </Button>
             
-            {!currentUser ? (
+            {mounted && currentUser ? (
+              <Button variant="secondary" href="/account" style={{ flex: '1 1 170px' }}>
+                View Collector Portal
+              </Button>
+            ) : (
               <Button
                 variant="secondary"
                 onClick={() => {
@@ -48,10 +58,6 @@ export default function CartPage() {
                 style={{ flex: '1 1 170px' }}
               >
                 Sign In / Sign Up
-              </Button>
-            ) : (
-              <Button variant="secondary" href="/account" style={{ flex: '1 1 170px' }}>
-                View Collector Portal
               </Button>
             )}
           </div>

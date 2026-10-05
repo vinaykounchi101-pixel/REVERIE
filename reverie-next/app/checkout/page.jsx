@@ -28,6 +28,7 @@ export default function CheckoutPage() {
   const { cartItems, clearCart, cartSubtotal } = useCart();
 
   // Authentication & Saved Addresses State
+  const [mounted, setMounted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [savedAddresses, setSavedAddresses] = useState([]);
@@ -67,6 +68,7 @@ export default function CheckoutPage() {
 
   // Initialize Auth & Addresses
   useEffect(() => {
+    setMounted(true);
     const isAuth = authService.isAuthenticated();
     setIsAuthenticated(isAuth);
 
@@ -800,7 +802,7 @@ export default function CheckoutPage() {
                       </tr>
                       <tr>
                         <td>Acquisition Reference:</td>
-                        <td>REV-ESCROW-{Math.floor(10000 + Math.random() * 90000)}</td>
+                        <td>REV-ESCROW-84920</td>
                       </tr>
                     </tbody>
                   </table>

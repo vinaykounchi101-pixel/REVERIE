@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Heart, Trash2, ShoppingBag, ArrowRight, Check, Compass, ShieldCheck, Sparkles, User } from 'lucide-react';
 import { useWishlist } from '../../context/WishlistContext';
@@ -15,7 +15,19 @@ export default function WishlistPage() {
   const [addedItem, setAddedItem] = useState(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('register');
-  const currentUser = authService.getCurrentUser();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setCurrentUser(authService.getCurrentUser());
+
+    const handleAuthChange = () => {
+      setCurrentUser(authService.getCurrentUser());
+    };
+    window.addEventListener('reverie_auth_change', handleAuthChange);
+    return () => window.removeEventListener('reverie_auth_change', handleAuthChange);
+  }, []);
 
   const handleAddToCart = (watch, e) => {
     e.preventDefault();
@@ -51,7 +63,11 @@ export default function WishlistPage() {
               Explore Collections
             </Button>
             
-            {!currentUser ? (
+            {mounted && currentUser ? (
+              <Button variant="secondary" href="/account" style={{ flex: '1 1 170px' }}>
+                View Collector Portal
+              </Button>
+            ) : (
               <Button
                 variant="secondary"
                 onClick={() => {
@@ -61,10 +77,6 @@ export default function WishlistPage() {
                 style={{ flex: '1 1 170px' }}
               >
                 Sign In / Sign Up
-              </Button>
-            ) : (
-              <Button variant="secondary" href="/account" style={{ flex: '1 1 170px' }}>
-                View Collector Portal
               </Button>
             )}
           </div>

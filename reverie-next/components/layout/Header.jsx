@@ -16,10 +16,12 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [mounted, setMounted] = useState(false);
 
   const isDarkTop = pathname === '/' && !isScrolled;
 
   useEffect(() => {
+    setMounted(true);
     setCurrentUser(authService.getCurrentUser());
     const handleAuthChange = () => {
       setCurrentUser(authService.getCurrentUser());
@@ -119,12 +121,12 @@ export default function Header() {
               <IconButton
                 icon={<Heart size={18} strokeWidth={1.5} />}
                 label="Curated Wishlist"
-                badge={wishlistCount}
+                badge={mounted ? wishlistCount : 0}
                 variant={isDarkTop ? 'light' : 'dark'}
               />
             </Link>
 
-            {currentUser ? (
+            {mounted && currentUser ? (
               <Link href="/account" aria-label="My Account" className="desktop-only">
                 <button
                   type="button"
@@ -164,7 +166,7 @@ export default function Header() {
               <IconButton
                 icon={<ShoppingBag size={18} strokeWidth={1.5} />}
                 label="Shopping Bag"
-                badge={totalCartCount}
+                badge={mounted ? totalCartCount : 0}
                 variant={isDarkTop ? 'light' : 'dark'}
               />
             </Link>

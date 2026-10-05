@@ -38,8 +38,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${inter.variable} ${cormorant.variable} ${cinzel.variable}`}>
-      <body className="velara-app antialiased">
+    <html lang="en" className={`${inter.variable} ${cormorant.variable} ${cinzel.variable}`} suppressHydrationWarning>
+      <body className="velara-app antialiased" suppressHydrationWarning>
         <WishlistProvider>
           <CartProvider>
             <SmoothScroll>

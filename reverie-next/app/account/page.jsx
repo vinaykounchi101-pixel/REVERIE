@@ -10,13 +10,17 @@ import Button from '../../components/ui/Button';
 import { useWishlist } from '../../context/WishlistContext';
 
 export default function AccountPage() {
-  const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
+  const [currentUser, setCurrentUser] = useState(null);
+  const [mounted, setMounted] = useState(false);
   const { wishlistItems, wishlistCount } = useWishlist();
   const [activeTab, setActiveTab] = useState('orders');
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login');
 
   useEffect(() => {
+    setMounted(true);
+    setCurrentUser(authService.getCurrentUser());
+
     const handleAuthChange = () => {
       setCurrentUser(authService.getCurrentUser());
     };
@@ -28,6 +32,28 @@ export default function AccountPage() {
     await authService.logout();
     setCurrentUser(null);
   };
+
+  if (!mounted) {
+    return (
+      <div className="page-account">
+        <div className="container" style={{ maxWidth: '640px', padding: 'var(--space-20) var(--space-4)' }}>
+          <div className="account-guest-gate font-ui" style={{
+            backgroundColor: 'var(--color-bg-secondary)',
+            border: '1px solid var(--color-border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--space-12) var(--space-8)',
+            textAlign: 'center',
+            boxShadow: 'var(--shadow-md)'
+          }}>
+            <span className="eyebrow eyebrow-light font-ui">COLLECTOR PORTAL</span>
+            <h1 className="font-display" style={{ fontSize: '32px', margin: '8px 0 12px' }}>
+              REVERIE Atelier
+            </h1>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!currentUser) {
     return (
