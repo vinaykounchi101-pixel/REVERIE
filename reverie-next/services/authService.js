@@ -15,6 +15,12 @@ const USER_KEY = 'reverie_auth_user';
 export const authService = {
   setAuthSession(data) {
     if (!data || typeof window === 'undefined') return;
+    const user = data.user;
+    const isVerified = user && (user.isVerified === true || user.verified === true || user.role === 'SUPER_ADMIN' || user.role === 'ADMIN');
+    if (!isVerified || (user && user.email === 'client@reverie.app')) {
+      this.clearAuthSession();
+      return;
+    }
     if (data.accessToken) localStorage.setItem(TOKEN_KEY, data.accessToken);
     if (data.refreshToken) localStorage.setItem(REFRESH_KEY, data.refreshToken);
     if (data.user) localStorage.setItem(USER_KEY, JSON.stringify(data.user));
@@ -31,11 +37,15 @@ export const authService = {
 
   getAccessToken() {
     if (typeof window === 'undefined') return null;
+    const user = this.getCurrentUser();
+    if (!user) return null;
     return localStorage.getItem(TOKEN_KEY) || null;
   },
 
   getRefreshToken() {
     if (typeof window === 'undefined') return null;
+    const user = this.getCurrentUser();
+    if (!user) return null;
     return localStorage.getItem(REFRESH_KEY) || null;
   },
 
@@ -43,15 +53,30 @@ export const authService = {
     if (typeof window === 'undefined') return null;
     try {
       const userStr = localStorage.getItem(USER_KEY);
-      return userStr ? JSON.parse(userStr) : null;
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (!userStr || !token) {
+        if (userStr || token) {
+          this.clearAuthSession();
+        }
+        return null;
+      }
+      const user = JSON.parse(userStr);
+      const isVerified = user && (user.isVerified === true || user.verified === true || user.role === 'SUPER_ADMIN' || user.role === 'ADMIN');
+      if (!isVerified || user.email === 'client@reverie.app') {
+        this.clearAuthSession();
+        return null;
+      }
+      return user;
     } catch {
+      this.clearAuthSession();
       return null;
     }
   },
 
   isAuthenticated() {
     if (typeof window === 'undefined') return false;
-    return !!localStorage.getItem(TOKEN_KEY);
+    const user = this.getCurrentUser();
+    return !!(user && localStorage.getItem(TOKEN_KEY));
   },
 
   // Check if an email account exists in backend
@@ -165,7 +190,7 @@ export const authService = {
     return json;
   },
 
-  // Verify 6-digit OTP
+  // Verify 6-digit OTP for account activation
   async verifyEmail(email, otp) {
     const res = await fetch(`${API_BASE}/auth/verify-email`, {
       method: 'POST',
@@ -180,7 +205,91 @@ export const authService = {
       throw err;
     }
 
+    if (json.data && json.data.accessToken) {
+      this.setAuthSession(json.data);
+    }
+
+    return json.data || json;
+  },
+
+  // Request 6-digit Email Login OTP
+  async requestLoginOtp(email) {
+    const res = await fetch(`${API_BASE}/auth/otp/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), type: 'EMAIL_LOGIN' }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      const err = new Error(json.message || 'Failed to dispatch sign-in code.');
+      err.status = res.status;
+      throw err;
+    }
+
     return json;
+  },
+
+  // Verify 6-digit Email Login OTP
+  async verifyLoginOtp(email, otp) {
+    const res = await fetch(`${API_BASE}/auth/otp/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), otp: otp.trim() }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      const err = new Error(json.message || 'Invalid or expired sign-in code.');
+      err.status = res.status;
+      throw err;
+    }
+
+    if (json.data && json.data.accessToken) {
+      this.setAuthSession(json.data);
+    }
+
+    return json.data;
+  },
+
+  // Request 6-digit Checkout Authorization OTP
+  async requestCheckoutOtp(email) {
+    const res = await fetch(`${API_BASE}/auth/otp/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), type: 'CHECKOUT_VERIFICATION' }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      const err = new Error(json.message || 'Failed to dispatch checkout verification code.');
+      err.status = res.status;
+      throw err;
+    }
+
+    return json;
+  },
+
+  // Verify 6-digit Checkout Authorization OTP
+  async verifyCheckoutOtp(email, otp) {
+    const res = await fetch(`${API_BASE}/auth/otp/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), otp: otp.trim() }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      const err = new Error(json.message || 'Invalid or expired acquisition authorization code.');
+      err.status = res.status;
+      throw err;
+    }
+
+    if (json.data && json.data.accessToken) {
+      this.setAuthSession(json.data);
+    }
+
+    return json.data;
   },
 
   // Resend 6-digit OTP

@@ -12,6 +12,7 @@ Follow these rules :
     and when the work is done give me call "Over n Out"
 8. Whenever i say "bye" you have to commit and push everything and update progress file and technical file 
     and also store everything from that session to your own repo memory and after its done say "Signing off".
+9. Whenever i say "hi" you have to read and analyze progress and technical files as well as your own repo memory.
 
 ## Additional Project Rules
 

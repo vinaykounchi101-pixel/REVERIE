@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { 
   ShieldCheck, 
@@ -17,11 +17,16 @@ import {
   UserCheck, 
   MapPin, 
   ArrowLeft,
-  Smartphone
+  Smartphone,
+  X,
+  AlertCircle,
+  Mail
 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import { useCart } from '../../context/CartContext';
 import { authService } from '../../services/authService';
+import { customerService } from '../../services/customerService';
+import { orderService } from '../../services/orderService';
 import { WORLD_COUNTRIES } from '../../data/countries';
 
 export default function CheckoutPage() {
@@ -35,6 +40,16 @@ export default function CheckoutPage() {
   const [selectedAddressIdx, setSelectedAddressIdx] = useState(0);
   const [addressMode, setAddressMode] = useState('new'); // 'select' or 'new'
   const [saveAddressToProfile, setSaveAddressToProfile] = useState(true);
+
+  // Email Verification & Authorization State
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [otpCountdown, setOtpCountdown] = useState(60);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState(null);
+  const [otpSuccessMsg, setOtpSuccessMsg] = useState(null);
+  const otpInputRefs = useRef([]);
 
   // Address Form State
   const [formData, setFormData] = useState({
@@ -75,14 +90,12 @@ export default function CheckoutPage() {
     if (isAuth) {
       const user = authService.getCurrentUser() || {};
       setCurrentUser(user);
+      if (user.verified) {
+        setIsEmailVerified(true);
+      }
 
-      // Load Saved Addresses
-      try {
-        const stored = localStorage.getItem('reverie_saved_addresses');
-        let addresses = stored ? JSON.parse(stored) : [];
-
+      customerService.getAddresses().then((addresses) => {
         if (!addresses || addresses.length === 0) {
-          // Initialize default profile address for the logged-in user
           const defaultAddress = {
             id: 'addr-default',
             title: 'Primary Residence',
@@ -99,14 +112,15 @@ export default function CheckoutPage() {
             isDefault: true,
           };
           addresses = [defaultAddress];
-          localStorage.setItem('reverie_saved_addresses', JSON.stringify(addresses));
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('reverie_saved_addresses', JSON.stringify(addresses));
+          }
         }
 
         setSavedAddresses(addresses);
         setSelectedAddressIdx(0);
         setAddressMode('select');
 
-        // Prepopulate form data as well
         if (addresses.length > 0) {
           const addr = addresses[0];
           setFormData({
@@ -123,17 +137,22 @@ export default function CheckoutPage() {
           });
           setCardData((prev) => ({
             ...prev,
-            nameOnCard: `${addr.firstName} ${addr.lastName}`.trim(),
+            nameOnCard: `${addr.firstName || user.firstName || ''} ${addr.lastName || user.lastName || ''}`.trim(),
           }));
         }
-      } catch (err) {
-        console.error('Error loading saved addresses', err);
-        setAddressMode('new');
-      }
+      });
     } else {
       setAddressMode('new');
     }
   }, []);
+
+  useEffect(() => {
+    let timer;
+    if (showOtpModal && otpCountdown > 0) {
+      timer = setInterval(() => setOtpCountdown((prev) => prev - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [showOtpModal, otpCountdown]);
 
   const estimatedTax = Math.round(cartSubtotal * 0.077);
   const orderTotal = cartSubtotal + estimatedTax;
@@ -177,35 +196,24 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleSubmitOrder = (e) => {
-    e.preventDefault();
-
+  const executeOrderPlacement = async () => {
     let finalAddress;
     if (addressMode === 'select' && savedAddresses[selectedAddressIdx]) {
       finalAddress = savedAddresses[selectedAddressIdx];
     } else {
       finalAddress = {
-        id: `addr-${Date.now()}`,
         title: 'New Delivery Address',
         ...formData,
       };
 
-      // If user is authenticated and checked "save address", update localStorage
       if (isAuthenticated && saveAddressToProfile) {
-        const updated = [...savedAddresses, finalAddress];
+        await customerService.addAddress(finalAddress);
+        const updated = await customerService.getAddresses();
         setSavedAddresses(updated);
-        try {
-          localStorage.setItem('reverie_saved_addresses', JSON.stringify(updated));
-        } catch (err) {
-          console.error(err);
-        }
       }
     }
 
-    const orderNumber = `REV-${Math.floor(100000 + Math.random() * 900000)}`;
-    const newOrder = {
-      orderId: orderNumber,
-      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+    const orderPayload = {
       total: orderTotal,
       subtotal: cartSubtotal,
       tax: estimatedTax,
@@ -222,20 +230,124 @@ export default function CheckoutPage() {
           : paymentMethod === 'wire'
           ? 'Swiss Escrow Wire'
           : `Net Banking (${selectedBank})`,
-      status: paymentMethod === 'cod' ? 'CONFIRMED' : 'PROCESSING',
     };
 
-    // Store in order history for tracking
+    const placed = await orderService.createOrder(orderPayload);
+    const finalOrder = {
+      orderId: placed.orderNumber || placed.orderId || `REV-${Math.floor(100000 + Math.random() * 900000)}`,
+      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+      ...orderPayload,
+      ...placed,
+    };
+
     try {
       const existingOrders = JSON.parse(localStorage.getItem('reverie_orders') || '[]');
-      localStorage.setItem('reverie_orders', JSON.stringify([newOrder, ...existingOrders]));
+      localStorage.setItem('reverie_orders', JSON.stringify([finalOrder, ...existingOrders]));
     } catch (err) {
       console.error(err);
     }
 
-    setPlacedOrderDetails(newOrder);
+    setPlacedOrderDetails(finalOrder);
     setOrderPlaced(true);
     clearCart();
+  };
+
+  const handleSubmitOrder = async (e) => {
+    e.preventDefault();
+
+    if (!formData.email || !formData.email.includes('@')) {
+      alert('Please provide a valid email address.');
+      return;
+    }
+
+    // Mandatory Email Verification for Checkout Authorization
+    if (!isEmailVerified && (!isAuthenticated || !currentUser?.verified)) {
+      setOtpLoading(true);
+      setOtpError(null);
+      try {
+        await authService.requestCheckoutOtp(formData.email);
+        setOtpDigits(['', '', '', '', '', '']);
+        setOtpCountdown(60);
+        setOtpSuccessMsg(`A 6-digit authorization code has been dispatched to ${formData.email}.`);
+        setShowOtpModal(true);
+      } catch (err) {
+        setOtpError(err.message || 'Failed to dispatch verification code.');
+        setShowOtpModal(true);
+      } finally {
+        setOtpLoading(false);
+      }
+      return;
+    }
+
+    await executeOrderPlacement();
+  };
+
+  const handleOtpChange = (index, value) => {
+    if (value.length > 1) {
+      const digits = value.replace(/\D/g, '').slice(0, 6).split('');
+      const newDigits = [...otpDigits];
+      digits.forEach((d, i) => {
+        if (index + i < 6) newDigits[index + i] = d;
+      });
+      setOtpDigits(newDigits);
+      const nextFocus = Math.min(index + digits.length, 5);
+      if (otpInputRefs.current[nextFocus]) {
+        otpInputRefs.current[nextFocus].focus();
+      }
+      return;
+    }
+
+    const newDigits = [...otpDigits];
+    newDigits[index] = value.replace(/\D/g, '');
+    setOtpDigits(newDigits);
+
+    if (value && index < 5 && otpInputRefs.current[index + 1]) {
+      otpInputRefs.current[index + 1].focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleResendCheckoutOtp = async () => {
+    try {
+      setOtpCountdown(60);
+      setOtpError(null);
+      await authService.requestCheckoutOtp(formData.email);
+      setOtpSuccessMsg(`A fresh authorization code has been dispatched to ${formData.email}.`);
+    } catch (err) {
+      setOtpError(err.message || 'Failed to resend authorization code.');
+    }
+  };
+
+  const handleVerifyCheckoutOtp = async (e) => {
+    e.preventDefault();
+    const otp = otpDigits.join('');
+    if (otp.length < 6) {
+      setOtpError('Please enter the complete 6-digit verification code.');
+      return;
+    }
+
+    setOtpLoading(true);
+    setOtpError(null);
+
+    try {
+      const authData = await authService.verifyCheckoutOtp(formData.email, otp);
+      setIsEmailVerified(true);
+      if (authData && authData.user) {
+        setIsAuthenticated(true);
+        setCurrentUser(authData.user);
+      }
+      setShowOtpModal(false);
+      await executeOrderPlacement();
+    } catch (err) {
+      setOtpError(err.message || 'Invalid or expired verification code.');
+    } finally {
+      setOtpLoading(false);
+    }
   };
 
   if (orderPlaced && placedOrderDetails) {
@@ -877,6 +989,110 @@ export default function CheckoutPage() {
           </div>
         </aside>
       </div>
+
+      {/* Email OTP Verification Modal for Checkout */}
+      {showOtpModal && (
+        <div className="auth-modal-overlay" onClick={() => setShowOtpModal(false)}>
+          <div 
+            className="auth-modal-card font-ui" 
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '440px', padding: '36px 32px' }}
+          >
+            <button
+              type="button"
+              className="auth-modal-close"
+              onClick={() => setShowOtpModal(false)}
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="auth-modal-header" style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                background: 'rgba(212, 175, 55, 0.1)',
+                border: '1px solid rgba(212, 175, 55, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px auto',
+                color: '#d4af37'
+              }}>
+                <ShieldCheck size={24} />
+              </div>
+              <h2 className="auth-modal-title font-display" style={{ fontSize: '22px', margin: '0 0 8px 0' }}>
+                Acquisition Authorization
+              </h2>
+              <p className="auth-modal-subtitle" style={{ fontSize: '13px', color: 'var(--color-stone-400)', margin: 0, lineHeight: 1.5 }}>
+                Enter the 6-digit security code dispatched to <strong>{formData.email}</strong> to authenticate and finalize your acquisition.
+              </p>
+            </div>
+
+            {otpError && (
+              <div className="auth-form-error font-ui" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertCircle size={15} style={{ flexShrink: 0 }} />
+                <span>{otpError}</span>
+              </div>
+            )}
+
+            {otpSuccessMsg && !otpError && (
+              <div className="auth-form-success font-ui" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle size={15} style={{ flexShrink: 0 }} />
+                <span>{otpSuccessMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleVerifyCheckoutOtp} className="auth-form font-ui">
+              <div className="otp-container">
+                <div className="otp-inputs-row" style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '16px' }}>
+                  {otpDigits.map((digit, idx) => (
+                    <input
+                      key={idx}
+                      ref={(el) => (otpInputRefs.current[idx] = el)}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      className="otp-digit-input font-display"
+                      value={digit}
+                      onChange={(e) => handleOtpChange(idx, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                      autoFocus={idx === 0}
+                    />
+                  ))}
+                </div>
+
+                <p className="otp-expiry-note" style={{ textAlign: 'center', fontSize: '12px', color: 'var(--color-stone-400)', marginBottom: '20px' }}>
+                  {otpCountdown > 0 ? (
+                    <span>Code expires in 00:{otpCountdown < 10 ? `0${otpCountdown}` : otpCountdown}</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="auth-link-btn"
+                      onClick={handleResendCheckoutOtp}
+                      style={{ background: 'none', border: 'none', color: '#d4af37', textDecoration: 'underline', cursor: 'pointer', fontSize: '12px' }}
+                    >
+                      Resend Code
+                    </button>
+                  )}
+                </p>
+              </div>
+
+              <Button
+                variant="primary"
+                type="submit"
+                className="auth-submit-btn"
+                disabled={otpLoading}
+                style={{ width: '100%' }}
+                arrow
+              >
+                {otpLoading ? 'Authorizing Acquisition...' : 'Verify & Place Order'}
+              </Button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

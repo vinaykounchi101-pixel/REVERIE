@@ -131,6 +131,11 @@ public class AuthService {
             throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS);
         }
 
+        if (!user.isVerified()) {
+            auditService.logAction("CUSTOMER", user.getId(), "LOGIN_UNVERIFIED_REJECTED", "USER", user.getId(), "FORBIDDEN", clientIp, "Account unverified");
+            throw new BusinessException(ErrorCode.FORBIDDEN, "EMAIL_UNVERIFIED: Your account is unverified. Please verify your email address to continue.");
+        }
+
         rateLimiterService.reset(rateLimitKey);
 
         return issueTokens(user, clientIp, "USER_LOGIN");
@@ -293,7 +298,7 @@ public class AuthService {
     }
 
     @Transactional
-    public void verifyEmail(VerifyEmailRequest request, HttpServletRequest httpRequest) {
+    public AuthResponse verifyEmail(VerifyEmailRequest request, HttpServletRequest httpRequest) {
         String email = request.getEmail().toLowerCase().trim();
         OtpToken otpToken = otpTokenRepository.findTopByIdentifierAndTokenTypeAndUsedAtIsNullOrderByCreatedAtDesc(
                 email, "EMAIL_VERIFICATION")
@@ -324,6 +329,88 @@ public class AuthService {
         userRepository.save(user);
 
         auditService.logAction("CUSTOMER", user.getId(), "EMAIL_VERIFIED", "USER", user.getId(), "SUCCESS", getClientIp(httpRequest), null);
+
+        return issueTokens(user, getClientIp(httpRequest), "EMAIL_VERIFIED_LOGIN");
+    }
+
+    @Transactional
+    public void requestLoginOtp(ResendOtpRequest request, HttpServletRequest httpRequest) {
+        String email = request.getEmail().toLowerCase().trim();
+        String clientIp = getClientIp(httpRequest);
+        String rateLimitKey = "login_otp:" + email + ":" + clientIp;
+        rateLimiterService.checkRateLimit(rateLimitKey, 5, 900);
+
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user != null && !user.isActive()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "Account is disabled. Please contact customer support.");
+        }
+
+        String type = (request.getType() != null && !request.getType().isBlank()) ? request.getType() : "EMAIL_LOGIN";
+        generateAndSaveOtp(user, email, type);
+
+        String role = user != null ? user.getRole().name() : "GUEST";
+        UUID userId = user != null ? user.getId() : null;
+        auditService.logAction(role, userId, "LOGIN_OTP_REQUESTED", "USER", userId, "SUCCESS", clientIp, null);
+    }
+
+    @Transactional
+    public AuthResponse verifyLoginOtp(VerifyEmailRequest request, HttpServletRequest httpRequest) {
+        String email = request.getEmail().toLowerCase().trim();
+        String clientIp = getClientIp(httpRequest);
+
+        OtpToken otpToken = otpTokenRepository.findTopByIdentifierAndTokenTypeAndUsedAtIsNullOrderByCreatedAtDesc(
+                email, "EMAIL_LOGIN")
+                .or(() -> otpTokenRepository.findTopByIdentifierAndTokenTypeAndUsedAtIsNullOrderByCreatedAtDesc(
+                        email, "CHECKOUT_VERIFICATION"))
+                .or(() -> otpTokenRepository.findTopByIdentifierAndTokenTypeAndUsedAtIsNullOrderByCreatedAtDesc(
+                        email, "EMAIL_VERIFICATION"))
+                .orElseThrow(() -> new BusinessException(ErrorCode.AUTH_OTP_EXPIRED, "Verification code not found or already used."));
+
+        if (otpToken.isExpired()) {
+            throw new BusinessException(ErrorCode.AUTH_OTP_EXPIRED, "Verification code has expired.");
+        }
+
+        if (otpToken.getAttempts() >= otpMaxAttempts) {
+            throw new BusinessException(ErrorCode.AUTH_OTP_EXPIRED, "Maximum verification attempts exceeded.");
+        }
+
+        otpToken.setAttempts(otpToken.getAttempts() + 1);
+
+        String expectedHash = JwtTokenProvider.hashToken(request.getOtp());
+        if (!expectedHash.equals(otpToken.getOtpHash())) {
+            otpTokenRepository.save(otpToken);
+            throw new BusinessException(ErrorCode.AUTH_INVALID_CREDENTIALS, "Invalid verification code.");
+        }
+
+        otpToken.setUsedAt(Instant.now());
+        otpTokenRepository.save(otpToken);
+
+        User user = userRepository.findByEmail(email).orElseGet(() -> {
+            String randomSecret = UUID.randomUUID().toString() + UUID.randomUUID().toString();
+            User newUser = new User(
+                    email,
+                    passwordEncoder.encode(randomSecret),
+                    "Collector",
+                    "Member",
+                    null,
+                    Role.CUSTOMER
+            );
+            newUser.setVerified(true);
+            return userRepository.save(newUser);
+        });
+
+        if (!user.isActive()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "Account is disabled. Please contact customer support.");
+        }
+
+        if (!user.isVerified()) {
+            user.setVerified(true);
+            userRepository.save(user);
+        }
+
+        auditService.logAction(user.getRole().name(), user.getId(), "LOGIN_OTP_VERIFIED", "USER", user.getId(), "SUCCESS", clientIp, null);
+
+        return issueTokens(user, clientIp, "USER_LOGIN_OTP");
     }
 
     @Transactional
@@ -402,10 +489,12 @@ public class AuthService {
         String email = request.getEmail().toLowerCase().trim();
         String type = (request.getType() != null && !request.getType().isBlank()) ? request.getType() : "EMAIL_VERIFICATION";
 
-        userRepository.findByEmail(email).ifPresent(user -> {
-            generateAndSaveOtp(user, email, type);
-            auditService.logAction("CUSTOMER", user.getId(), "OTP_RESENT", "USER", user.getId(), "SUCCESS", getClientIp(httpRequest), null);
-        });
+        User user = userRepository.findByEmail(email).orElse(null);
+        generateAndSaveOtp(user, email, type);
+        
+        String role = user != null ? user.getRole().name() : "GUEST";
+        UUID userId = user != null ? user.getId() : null;
+        auditService.logAction(role, userId, "OTP_RESENT", "USER", userId, "SUCCESS", getClientIp(httpRequest), null);
     }
 
     private void generateAndSaveOtp(User user, String identifier, String type) {
@@ -420,6 +509,10 @@ public class AuthService {
         String recipientName = user != null ? user.getFirstName() : null;
         if ("EMAIL_VERIFICATION".equalsIgnoreCase(type)) {
             emailService.sendEmailVerificationOtp(identifier, recipientName, rawOtp);
+        } else if ("CHECKOUT_VERIFICATION".equalsIgnoreCase(type)) {
+            emailService.sendCheckoutVerificationOtp(identifier, recipientName, rawOtp);
+        } else if ("EMAIL_LOGIN".equalsIgnoreCase(type) || "LOGIN_OTP".equalsIgnoreCase(type)) {
+            emailService.sendLoginOtp(identifier, recipientName, rawOtp);
         } else if ("PASSWORD_RESET".equalsIgnoreCase(type)) {
             emailService.sendPasswordResetOtp(identifier, recipientName, rawOtp);
         }

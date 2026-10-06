@@ -1,5 +1,6 @@
 package com.reverie.auth.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
@@ -8,10 +9,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class EmailService {
@@ -19,6 +27,11 @@ public class EmailService {
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
 
     private final JavaMailSender mailSender;
+    private final ObjectMapper objectMapper;
+    private final HttpClient httpClient;
+
+    @Value("${app.mail.provider:auto}")
+    private String emailProvider; // auto | resend | brevo | smtp | mock
 
     @Value("${spring.mail.username:}")
     private String mailUsername;
@@ -29,9 +42,27 @@ public class EmailService {
     @Value("${app.mail.from-name:REVERIE Haute Horlogerie}")
     private String fromName;
 
+    @Value("${app.mail.resend.api-key:}")
+    private String resendApiKey;
+
+    @Value("${app.mail.resend.api-url:https://api.resend.com/emails}")
+    private String resendApiUrl;
+
+    @Value("${app.mail.brevo.api-key:}")
+    private String brevoApiKey;
+
+    @Value("${app.mail.brevo.api-url:https://api.brevo.com/v3/smtp/email}")
+    private String brevoApiUrl;
+
     @Autowired
-    public EmailService(@Autowired(required = false) JavaMailSender mailSender) {
+    public EmailService(
+            @Autowired(required = false) JavaMailSender mailSender,
+            ObjectMapper objectMapper) {
         this.mailSender = mailSender;
+        this.objectMapper = objectMapper != null ? objectMapper : new ObjectMapper();
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
     }
 
     /**
@@ -49,7 +80,43 @@ public class EmailService {
                 "This verification code remains valid for 10 minutes. If you did not create a REVERIE account, please disregard this transmission or contact our Concierge."
         );
 
-        sendMimeEmail(toEmail, subject, htmlContent, otpCode, "EMAIL_VERIFICATION");
+        dispatchEmail(toEmail, subject, htmlContent, otpCode, "EMAIL_VERIFICATION");
+    }
+
+    /**
+     * Sends the 6-digit One-Time Login OTP
+     */
+    public void sendLoginOtp(String toEmail, String recipientName, String otpCode) {
+        String subject = "REVERIE — Your Sign In Code (Code: " + otpCode + ")";
+        String name = (recipientName != null && !recipientName.isBlank()) ? recipientName : "Valued Collector";
+
+        String htmlContent = buildLuxuryEmailHtml(
+                "MEMBER SIGN IN",
+                "Dear " + name + ",",
+                "A one-time verification code was requested to authenticate your REVERIE collector account. Please use the code below to complete sign-in:",
+                otpCode,
+                "This code remains valid for 10 minutes. If you did not request this sign-in code, please contact our Concierge immediately."
+        );
+
+        dispatchEmail(toEmail, subject, htmlContent, otpCode, "EMAIL_LOGIN");
+    }
+
+    /**
+     * Sends the 6-digit Checkout / Order Verification OTP
+     */
+    public void sendCheckoutVerificationOtp(String toEmail, String recipientName, String otpCode) {
+        String subject = "REVERIE — Authorize Timepiece Acquisition (Code: " + otpCode + ")";
+        String name = (recipientName != null && !recipientName.isBlank()) ? recipientName : "Valued Collector";
+
+        String htmlContent = buildLuxuryEmailHtml(
+                "CHECKOUT AUTHORIZATION",
+                "Dear " + name + ",",
+                "To verify your identity and protect your luxury timepiece acquisition, please enter the single-use authorization code below to finalize your order:",
+                otpCode,
+                "This single-use acquisition authorization code expires in 10 minutes. If you did not initiate this transaction, please contact the REVERIE Concierge immediately."
+        );
+
+        dispatchEmail(toEmail, subject, htmlContent, otpCode, "CHECKOUT_VERIFICATION");
     }
 
     /**
@@ -67,13 +134,139 @@ public class EmailService {
                 "This security code expires in 15 minutes. If you did not initiate this request, please contact the REVERIE Concierge immediately to secure your portfolio."
         );
 
-        sendMimeEmail(toEmail, subject, htmlContent, otpCode, "PASSWORD_RESET");
+        dispatchEmail(toEmail, subject, htmlContent, otpCode, "PASSWORD_RESET");
     }
 
-    private void sendMimeEmail(String toEmail, String subject, String htmlContent, String otpCode, String type) {
+    /**
+     * Central dispatcher coordinating Resend, Brevo, SMTP, and Mock fallbacks
+     */
+    private void dispatchEmail(String toEmail, String subject, String htmlContent, String otpCode, String type) {
+        String provider = (emailProvider != null && !emailProvider.isBlank()) ? emailProvider.trim().toLowerCase() : "auto";
+        boolean sent = false;
+
+        switch (provider) {
+            case "resend" -> sent = sendViaResend(toEmail, subject, htmlContent, type);
+            case "brevo" -> sent = sendViaBrevo(toEmail, subject, htmlContent, type);
+            case "smtp" -> sent = sendViaSmtp(toEmail, subject, htmlContent, type);
+            case "mock", "dev" -> {
+                log.info("[EMAIL MOCK] Provider set to '{}'. Dispatched simulated {} for [{}]: {}", provider, type, toEmail, otpCode);
+                return;
+            }
+            default -> {
+                // "auto" mode: dynamically route based on present credentials
+                if (resendApiKey != null && !resendApiKey.isBlank()) {
+                    sent = sendViaResend(toEmail, subject, htmlContent, type);
+                } else if (brevoApiKey != null && !brevoApiKey.isBlank()) {
+                    sent = sendViaBrevo(toEmail, subject, htmlContent, type);
+                } else if (mailSender != null && mailUsername != null && !mailUsername.isBlank()) {
+                    sent = sendViaSmtp(toEmail, subject, htmlContent, type);
+                }
+            }
+        }
+
+        if (!sent) {
+            log.info("[EMAIL FALLBACK NOTIFICATION] Dispatched simulated {} token for [{}] (Code: {}). Provide RESEND_API_KEY, BREVO_API_KEY, or SPRING_MAIL_USERNAME in environment for live delivery.", type, toEmail, otpCode);
+        }
+    }
+
+    /**
+     * Resend API Provider (https://resend.com)
+     */
+    private boolean sendViaResend(String toEmail, String subject, String htmlContent, String type) {
+        if (resendApiKey == null || resendApiKey.isBlank()) {
+            log.warn("[EMAIL RESEND] RESEND_API_KEY is not configured.");
+            return false;
+        }
+
+        try {
+            String senderEmail = (fromAddress != null && !fromAddress.isBlank()) ? fromAddress : "onboarding@resend.dev";
+            String fromFormatted = (fromName != null && !fromName.isBlank()) ? fromName + " <" + senderEmail + ">" : senderEmail;
+
+            Map<String, Object> payload = Map.of(
+                    "from", fromFormatted,
+                    "to", List.of(toEmail),
+                    "subject", subject,
+                    "html", htmlContent
+            );
+
+            String jsonBody = objectMapper.writeValueAsString(payload);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(resendApiUrl != null && !resendApiUrl.isBlank() ? resendApiUrl : "https://api.resend.com/emails"))
+                    .header("Authorization", "Bearer " + resendApiKey.trim())
+                    .header("Content-Type", "application/json")
+                    .timeout(Duration.ofSeconds(10))
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                log.info("[EMAIL RESEND SUCCESS] Dispatched {} notification to {} via Resend API (HTTP {})", type, toEmail, response.statusCode());
+                return true;
+            } else {
+                log.error("[EMAIL RESEND ERROR] Failed to dispatch {} email via Resend to {}: HTTP {} - {}", type, toEmail, response.statusCode(), response.body());
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("[EMAIL RESEND EXCEPTION] Error dispatching to {}: {}", toEmail, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Brevo API Provider (https://brevo.com / Sendinblue)
+     */
+    private boolean sendViaBrevo(String toEmail, String subject, String htmlContent, String type) {
+        if (brevoApiKey == null || brevoApiKey.isBlank()) {
+            log.warn("[EMAIL BREVO] BREVO_API_KEY is not configured.");
+            return false;
+        }
+
+        try {
+            String senderEmail = (fromAddress != null && !fromAddress.isBlank()) ? fromAddress : "concierge@reverie.luxury";
+            String senderName = (fromName != null && !fromName.isBlank()) ? fromName : "REVERIE Haute Horlogerie";
+
+            Map<String, Object> payload = Map.of(
+                    "sender", Map.of("name", senderName, "email", senderEmail),
+                    "to", List.of(Map.of("email", toEmail)),
+                    "subject", subject,
+                    "htmlContent", htmlContent
+            );
+
+            String jsonBody = objectMapper.writeValueAsString(payload);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(brevoApiUrl != null && !brevoApiUrl.isBlank() ? brevoApiUrl : "https://api.brevo.com/v3/smtp/email"))
+                    .header("api-key", brevoApiKey.trim())
+                    .header("accept", "application/json")
+                    .header("Content-Type", "application/json")
+                    .timeout(Duration.ofSeconds(10))
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                log.info("[EMAIL BREVO SUCCESS] Dispatched {} notification to {} via Brevo API (HTTP {})", type, toEmail, response.statusCode());
+                return true;
+            } else {
+                log.error("[EMAIL BREVO ERROR] Failed to dispatch {} email via Brevo to {}: HTTP {} - {}. Note: Ensure your sender address ({}) is verified in Brevo Dashboard.", type, toEmail, response.statusCode(), response.body(), senderEmail);
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("[EMAIL BREVO EXCEPTION] Error dispatching to {}: {}", toEmail, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Standard SMTP Provider (Gmail, Brevo SMTP relay, Amazon SES, Postmark, etc.)
+     */
+    private boolean sendViaSmtp(String toEmail, String subject, String htmlContent, String type) {
         if (mailSender == null || mailUsername == null || mailUsername.isBlank()) {
-            log.warn("[EMAIL SERVICE NOT CONFIGURED] Gmail SMTP credentials (SPRING_MAIL_USERNAME) not set in environment. Dispatched mock {} notification for {}", type, toEmail);
-            return;
+            log.warn("[EMAIL SMTP NOT CONFIGURED] SMTP credentials (SPRING_MAIL_USERNAME) not set in environment.");
+            return false;
         }
 
         try {
@@ -87,11 +280,14 @@ public class EmailService {
             helper.setText(htmlContent, true);
 
             mailSender.send(message);
-            log.info("[EMAIL SENT] Successfully transmitted {} OTP notification to {}", type, toEmail);
+            log.info("[EMAIL SMTP SUCCESS] Transmitted {} notification to {} via SMTP", type, toEmail);
+            return true;
         } catch (MessagingException | UnsupportedEncodingException e) {
-            log.error("[EMAIL ERROR] Failed to send {} email to {}: {}", type, toEmail, e.getMessage());
+            log.error("[EMAIL SMTP ERROR] Failed to send {} email via SMTP to {}: {}", type, toEmail, e.getMessage());
+            return false;
         } catch (Exception ex) {
-            log.error("[EMAIL ERROR] Unexpected error while dispatching email to {}: {}", toEmail, ex.getMessage());
+            log.error("[EMAIL SMTP ERROR] Unexpected error while dispatching email to {}: {}", toEmail, ex.getMessage());
+            return false;
         }
     }
 

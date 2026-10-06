@@ -89,12 +89,30 @@ public class AuthController {
     }
 
     @PostMapping("/verify-email")
-    @Operation(summary = "Verify Email Address", description = "Validates 6-digit OTP code to verify customer account.")
-    public ResponseEntity<ApiResponse<Void>> verifyEmail(
+    @Operation(summary = "Verify Email Address", description = "Validates 6-digit OTP code to verify customer account and issues session tokens.")
+    public ResponseEntity<ApiResponse<AuthResponse>> verifyEmail(
             @Valid @RequestBody VerifyEmailRequest request,
             HttpServletRequest httpRequest) {
-        authService.verifyEmail(request, httpRequest);
-        return ResponseEntity.ok(ApiResponse.message("Email verified successfully."));
+        AuthResponse response = authService.verifyEmail(request, httpRequest);
+        return ResponseEntity.ok(ApiResponse.success("Email verified successfully.", response));
+    }
+
+    @PostMapping("/otp/request")
+    @Operation(summary = "Request Login OTP", description = "Dispatches a single-use 6-digit login verification code to the registered email.")
+    public ResponseEntity<ApiResponse<Void>> requestLoginOtp(
+            @Valid @RequestBody ResendOtpRequest request,
+            HttpServletRequest httpRequest) {
+        authService.requestLoginOtp(request, httpRequest);
+        return ResponseEntity.ok(ApiResponse.message("If an account exists, a sign-in verification code has been dispatched."));
+    }
+
+    @PostMapping("/otp/verify")
+    @Operation(summary = "Verify Login OTP", description = "Validates single-use 6-digit sign-in code and returns JWT authentication tokens.")
+    public ResponseEntity<ApiResponse<AuthResponse>> verifyLoginOtp(
+            @Valid @RequestBody VerifyEmailRequest request,
+            HttpServletRequest httpRequest) {
+        AuthResponse response = authService.verifyLoginOtp(request, httpRequest);
+        return ResponseEntity.ok(ApiResponse.success("Sign-in verification successful", response));
     }
 
     @PostMapping("/resend-otp")

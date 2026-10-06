@@ -55,7 +55,9 @@ public class SecurityConfig {
 
                 // Public Read-Only Catalog & Content
                 .requestMatchers(HttpMethod.GET,
+                    "/api/watches/**",
                     "/api/products/**",
+                    "/api/catalog/**",
                     "/api/categories/**",
                     "/api/collections/**",
                     "/api/search/**",

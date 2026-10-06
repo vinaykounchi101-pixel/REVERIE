@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { User, Package, Heart, MapPin, CreditCard, Settings, HelpCircle, ExternalLink, LogOut, ShieldCheck, Info, Clock, Sparkles, Compass } from 'lucide-react';
 import { sampleOrders } from '../../data/allProductsData';
 import { authService } from '../../services/authService';
+import { customerService } from '../../services/customerService';
+import { orderService } from '../../services/orderService';
 import AuthModal from '../../components/auth/AuthModal';
 import Button from '../../components/ui/Button';
 import { useWishlist } from '../../context/WishlistContext';
@@ -16,13 +18,48 @@ export default function AccountPage() {
   const [activeTab, setActiveTab] = useState('orders');
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login');
+  const [userOrders, setUserOrders] = useState([]);
+  const [userAddresses, setUserAddresses] = useState([]);
+  const [newAddrFormOpen, setNewAddrFormOpen] = useState(false);
+  const [newAddr, setNewAddr] = useState({
+    title: 'New Address',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    address: '',
+    apartment: '',
+    city: '',
+    state: '',
+    country: 'Switzerland',
+    postalCode: '',
+  });
 
   useEffect(() => {
     setMounted(true);
-    setCurrentUser(authService.getCurrentUser());
+    const user = authService.getCurrentUser();
+    setCurrentUser(user);
+
+    if (user) {
+      orderService.getMyOrders().then((ords) => {
+        if (ords && ords.length > 0) setUserOrders(ords);
+        else setUserOrders(sampleOrders);
+      });
+      customerService.getAddresses().then((addrs) => {
+        if (addrs && addrs.length > 0) setUserAddresses(addrs);
+      });
+    }
 
     const handleAuthChange = () => {
-      setCurrentUser(authService.getCurrentUser());
+      const updatedUser = authService.getCurrentUser();
+      setCurrentUser(updatedUser);
+      if (updatedUser) {
+        orderService.getMyOrders().then((ords) => {
+          if (ords && ords.length > 0) setUserOrders(ords);
+        });
+        customerService.getAddresses().then((addrs) => {
+          if (addrs && addrs.length > 0) setUserAddresses(addrs);
+        });
+      }
     };
     window.addEventListener('reverie_auth_change', handleAuthChange);
     return () => window.removeEventListener('reverie_auth_change', handleAuthChange);
@@ -31,6 +68,27 @@ export default function AccountPage() {
   const handleLogout = async () => {
     await authService.logout();
     setCurrentUser(null);
+  };
+
+  const handleAddAddress = async (e) => {
+    e.preventDefault();
+    const saved = await customerService.addAddress(newAddr);
+    if (saved) {
+      setUserAddresses((prev) => [...prev, saved]);
+      setNewAddrFormOpen(false);
+      setNewAddr({
+        title: 'New Address',
+        firstName: '',
+        lastName: '',
+        phone: '',
+        address: '',
+        apartment: '',
+        city: '',
+        state: '',
+        country: 'Switzerland',
+        postalCode: '',
+      });
+    }
   };
 
   if (!mounted) {
@@ -203,45 +261,54 @@ export default function AccountPage() {
                 </div>
 
                 <div className="account-orders-list">
-                  {sampleOrders.map((ord) => (
-                    <article key={ord.id} className="account-order-card">
-                      <div className="account-order-header">
-                        <div>
-                          <span className="account-order-id">#{ord.id}</span>
-                          <span className="account-order-date font-ui">{ord.date}</span>
+                  {userOrders.length === 0 ? (
+                    <div style={{ padding: '32px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <p style={{ color: 'var(--color-stone-400)', marginBottom: '16px' }}>No past acquisitions found.</p>
+                      <Link href="/collections">
+                        <Button variant="primary" arrow>Explore Catalog</Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    userOrders.map((ord) => (
+                      <article key={ord.id || ord.orderId || ord.orderNumber} className="account-order-card">
+                        <div className="account-order-header">
+                          <div>
+                            <span className="account-order-id">#{ord.orderId || ord.orderNumber || ord.id}</span>
+                            <span className="account-order-date font-ui">{ord.date || ord.createdAt || 'Recent'}</span>
+                          </div>
+                          <span className={`account-order-status account-order-status--${(ord.status || 'PROCESSING').toLowerCase()}`}>
+                            {ord.status || 'PROCESSING'}
+                          </span>
                         </div>
-                        <span className={`account-order-status account-order-status--${ord.status.toLowerCase()}`}>
-                          {ord.status}
-                        </span>
-                      </div>
 
-                      <div className="account-order-body">
-                        <div className="account-order-items">
-                          {ord.items.map((it, idx) => (
-                            <div key={idx} className="account-order-item-row">
-                              <span className="account-order-item-name font-display">{it.name}</span>
-                              <span className="account-order-item-qty">Qty: {it.qty}</span>
-                              <span className="account-order-item-price font-display">${it.price ? it.price.toLocaleString() : '1,299'}</span>
-                            </div>
-                          ))}
+                        <div className="account-order-body">
+                          <div className="account-order-items">
+                            {(ord.items || []).map((it, idx) => (
+                              <div key={idx} className="account-order-item-row">
+                                <span className="account-order-item-name font-display">{it.name || it.productName || 'REVERIE Chronometer'}</span>
+                                <span className="account-order-item-qty">Qty: {it.qty || it.quantity || 1}</span>
+                                <span className="account-order-item-price font-display">${((it.price || 1299) * (it.qty || it.quantity || 1)).toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="account-order-footer">
-                        <span className="account-order-total font-display">
-                          Total: <strong>${ord.total ? ord.total.toLocaleString() : '1,299'}</strong>
-                        </span>
-                        <div className="account-order-actions">
-                          <Link href={`/order-tracking?id=${ord.id}`}>
-                            <Button variant="secondary" className="account-track-btn">
-                              <span>Track Shipment</span>
-                              <ExternalLink size={13} />
-                            </Button>
-                          </Link>
+                        <div className="account-order-footer">
+                          <span className="account-order-total font-display">
+                            Total: <strong>${(ord.total || ord.totalAmountPaise ? (ord.total || (ord.totalAmountPaise / 100)) : 1299).toLocaleString()}</strong>
+                          </span>
+                          <div className="account-order-actions">
+                            <Link href={`/order-tracking?id=${ord.orderId || ord.orderNumber || ord.id}`}>
+                              <Button variant="secondary" className="account-track-btn">
+                                <span>Track Shipment</span>
+                                <ExternalLink size={13} />
+                              </Button>
+                            </Link>
+                          </div>
                         </div>
-                      </div>
-                    </article>
-                  ))}
+                      </article>
+                    ))
+                  )}
                 </div>
               </div>
             )}
@@ -316,13 +383,68 @@ export default function AccountPage() {
 
             {activeTab === 'addresses' && (
               <div className="account-addresses-pane">
-                <h2 className="account-pane-title font-display">Registered Addresses</h2>
-                <div className="checkout-mini-item" style={{ marginTop: '20px', padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
-                  <div>
-                    <strong>Default Residence</strong>
-                    <p style={{ margin: '4px 0', opacity: 0.8 }}>45 Lake Geneva Boulevard, Apt 12, 1204 Genève, Switzerland</p>
-                    <span style={{ fontSize: '12px', color: '#d4af37' }}>Primary Insured Delivery Location</span>
-                  </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h2 className="account-pane-title font-display" style={{ margin: 0 }}>Registered Addresses</h2>
+                  <Button variant="secondary" onClick={() => setNewAddrFormOpen(!newAddrFormOpen)} style={{ fontSize: '12px', padding: '6px 14px' }}>
+                    {newAddrFormOpen ? 'Cancel' : '+ Add Address'}
+                  </Button>
+                </div>
+
+                {newAddrFormOpen && (
+                  <form onSubmit={handleAddAddress} style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '8px', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div className="checkout-form-grid">
+                      <div className="form-group">
+                        <label>Address Title</label>
+                        <input type="text" value={newAddr.title} onChange={(e) => setNewAddr({ ...newAddr, title: e.target.value })} placeholder="e.g. Primary Residence" required />
+                      </div>
+                      <div className="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" value={newAddr.phone} onChange={(e) => setNewAddr({ ...newAddr, phone: e.target.value })} placeholder="+41 22 819 9000" />
+                      </div>
+                      <div className="form-group form-group--full">
+                        <label>Street Address</label>
+                        <input type="text" value={newAddr.address} onChange={(e) => setNewAddr({ ...newAddr, address: e.target.value })} placeholder="45 Lake Geneva Boulevard" required />
+                      </div>
+                      <div className="form-group">
+                        <label>City</label>
+                        <input type="text" value={newAddr.city} onChange={(e) => setNewAddr({ ...newAddr, city: e.target.value })} placeholder="Genève" required />
+                      </div>
+                      <div className="form-group">
+                        <label>Postal Code</label>
+                        <input type="text" value={newAddr.postalCode} onChange={(e) => setNewAddr({ ...newAddr, postalCode: e.target.value })} placeholder="1204" required />
+                      </div>
+                    </div>
+                    <div style={{ marginTop: '16px' }}>
+                      <Button variant="primary" type="submit">Save Address</Button>
+                    </div>
+                  </form>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                  {userAddresses.length === 0 ? (
+                    <div className="checkout-mini-item" style={{ padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+                      <div>
+                        <strong>Default Residence</strong>
+                        <p style={{ margin: '4px 0', opacity: 0.8 }}>45 Lake Geneva Boulevard, Apt 12, 1204 Genève, Switzerland</p>
+                        <span style={{ fontSize: '12px', color: '#d4af37' }}>Primary Insured Delivery Location</span>
+                      </div>
+                    </div>
+                  ) : (
+                    userAddresses.map((addr, idx) => (
+                      <div key={addr.id || idx} style={{ padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <strong style={{ color: '#fff', fontSize: '14px' }}>{addr.title || `Address #${idx + 1}`}</strong>
+                          {addr.isDefault && <span style={{ fontSize: '10px', color: '#d4af37', background: 'rgba(212,175,55,0.1)', padding: '2px 6px', borderRadius: '4px' }}>DEFAULT</span>}
+                        </div>
+                        <p style={{ margin: '8px 0', fontSize: '13px', color: 'var(--color-stone-400)', lineHeight: 1.5 }}>
+                          {addr.address || addr.street} {addr.apartment ? `, ${addr.apartment}` : ''}<br />
+                          {addr.city}, {addr.state} {addr.postalCode}<br />
+                          {addr.country}
+                        </p>
+                        {addr.phone && <span style={{ fontSize: '12px', color: 'var(--color-stone-400)' }}>Phone: {addr.phone}</span>}
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}

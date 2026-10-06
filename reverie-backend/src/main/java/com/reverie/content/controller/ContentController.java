@@ -45,6 +45,14 @@ public class ContentController {
         return ResponseEntity.ok(ApiResponse.success(faqs));
     }
 
+    @GetMapping("/faqs/admin")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'CONTENT_MGR')")
+    @Operation(summary = "Admin: Get all FAQ items", description = "Retrieves all FAQs including unpublished drafts")
+    public ResponseEntity<ApiResponse<List<FaqDto>>> getFaqsAdmin() {
+        List<FaqDto> faqs = contentService.getAllFaqsForAdmin();
+        return ResponseEntity.ok(ApiResponse.success(faqs));
+    }
+
     @PostMapping("/faqs/admin")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'CONTENT_MGR')")
     @Operation(summary = "Admin: Create FAQ item", description = "Adds a new knowledge base item to FAQs")
@@ -71,6 +79,14 @@ public class ContentController {
     @Operation(summary = "Get published brand stories", description = "Retrieves paginated list of horology heritage and brand articles")
     public ResponseEntity<ApiResponse<Page<BrandStoryDto>>> getStories(@PageableDefault(size = 10) Pageable pageable) {
         Page<BrandStoryDto> stories = contentService.getPublishedStories(pageable);
+        return ResponseEntity.ok(ApiResponse.success(stories));
+    }
+
+    @GetMapping("/stories/admin")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'CONTENT_MGR')")
+    @Operation(summary = "Admin: Get all brand stories", description = "Retrieves all editorial stories including drafts")
+    public ResponseEntity<ApiResponse<Page<BrandStoryDto>>> getStoriesAdmin(@PageableDefault(size = 20) Pageable pageable) {
+        Page<BrandStoryDto> stories = contentService.getAllStoriesForAdmin(pageable);
         return ResponseEntity.ok(ApiResponse.success(stories));
     }
 

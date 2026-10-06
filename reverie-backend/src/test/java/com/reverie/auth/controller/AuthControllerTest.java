@@ -98,6 +98,7 @@ public class AuthControllerTest {
     @Test
     void shouldLoginSuccessfullyAndIssueJwt() throws Exception {
         User user = new User("client@reverie.app", passwordEncoder.encode("Password@123"), "Client", "User", null, Role.CUSTOMER);
+        user.setVerified(true);
         userRepository.save(user);
 
         LoginRequest request = new LoginRequest("client@reverie.app", "Password@123");
@@ -113,8 +114,25 @@ public class AuthControllerTest {
     }
 
     @Test
+    void shouldRejectLoginWhenEmailUnverified() throws Exception {
+        User user = new User("unverified@reverie.app", passwordEncoder.encode("Password@123"), "Unverified", "User", null, Role.CUSTOMER);
+        user.setVerified(false);
+        userRepository.save(user);
+
+        LoginRequest request = new LoginRequest("unverified@reverie.app", "Password@123");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"))
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("EMAIL_UNVERIFIED")));
+    }
+
+    @Test
     void shouldRejectCustomerAccountOnAdminLogin() throws Exception {
         User customer = new User("customer@reverie.app", passwordEncoder.encode("Password@123"), "Cust", "Omer", null, Role.CUSTOMER);
+        customer.setVerified(true);
         userRepository.save(customer);
 
         LoginRequest request = new LoginRequest("customer@reverie.app", "Password@123");
@@ -129,6 +147,7 @@ public class AuthControllerTest {
     @Test
     void shouldAllowSuperAdminOnAdminLogin() throws Exception {
         User admin = new User("admin@reverie.app", passwordEncoder.encode("Password@123"), "Super", "Admin", null, Role.SUPER_ADMIN);
+        admin.setVerified(true);
         userRepository.save(admin);
 
         LoginRequest request = new LoginRequest("admin@reverie.app", "Password@123");
@@ -143,6 +162,7 @@ public class AuthControllerTest {
     @Test
     void shouldRotateRefreshTokenSuccessfully() throws Exception {
         User user = new User("rotate@reverie.app", passwordEncoder.encode("Password@123"), "Rotate", "User", null, Role.CUSTOMER);
+        user.setVerified(true);
         userRepository.save(user);
 
         LoginRequest loginRequest = new LoginRequest("rotate@reverie.app", "Password@123");
@@ -173,7 +193,7 @@ public class AuthControllerTest {
     }
 
     @Test
-    void shouldVerifyEmailWithOtp() throws Exception {
+    void shouldVerifyEmailWithOtpAndReturnAuthResponse() throws Exception {
         User user = new User("verify@reverie.app", passwordEncoder.encode("Password@123"), "Verify", "User", null, Role.CUSTOMER);
         user.setVerified(false);
         userRepository.save(user);
@@ -188,9 +208,42 @@ public class AuthControllerTest {
         mockMvc.perform(post("/api/auth/verify-email")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.data.user.email").value("verify@reverie.app"));
 
         User verifiedUser = userRepository.findByEmail("verify@reverie.app").orElseThrow();
         assertTrue(verifiedUser.isVerified());
+    }
+
+    @Test
+    void shouldRequestAndVerifyEmailOtpLogin() throws Exception {
+        User user = new User("otplogin@reverie.app", passwordEncoder.encode("Password@123"), "Otp", "User", null, Role.CUSTOMER);
+        user.setVerified(true);
+        userRepository.save(user);
+
+        // Request Login OTP
+        ResendOtpRequest req = new ResendOtpRequest("otplogin@reverie.app", "EMAIL_LOGIN");
+        mockMvc.perform(post("/api/auth/otp/request")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk());
+
+        // Verify OTP Login
+        OtpToken token = otpTokenRepository.findTopByIdentifierAndTokenTypeAndUsedAtIsNullOrderByCreatedAtDesc(
+                "otplogin@reverie.app", "EMAIL_LOGIN").orElseThrow();
+        
+        // Use a test OTP
+        String testOtp = "654321";
+        token.setOtpHash(JwtTokenProvider.hashToken(testOtp));
+        otpTokenRepository.save(token);
+
+        VerifyEmailRequest verifyReq = new VerifyEmailRequest("otplogin@reverie.app", testOtp);
+        mockMvc.perform(post("/api/auth/otp/verify")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(verifyReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.data.user.email").value("otplogin@reverie.app"));
     }
 }

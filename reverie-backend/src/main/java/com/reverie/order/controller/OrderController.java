@@ -56,7 +56,7 @@ public class OrderController {
     }
 
     @GetMapping("/admin/all")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Admin: Get all orders", description = "Retrieves all customer orders with optional status filter")
     public ResponseEntity<ApiResponse<Page<OrderDto>>> getAllOrdersAdmin(
             @RequestParam(required = false) OrderStatus status,
@@ -66,7 +66,7 @@ public class OrderController {
     }
 
     @PatchMapping("/admin/{orderId}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Admin: Update order status", description = "Transitions order state machine (e.g. PROCESSING -> SHIPPED -> DELIVERED)")
     public ResponseEntity<ApiResponse<OrderDto>> updateOrderStatus(
             @PathVariable UUID orderId,

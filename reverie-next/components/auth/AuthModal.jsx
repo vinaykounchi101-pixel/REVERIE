@@ -29,7 +29,8 @@ function GoogleIcon() {
 }
 
 export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAuthSuccess }) {
-  const [mode, setMode] = useState(initialMode);
+  const [mode, setMode] = useState(initialMode); // 'login' | 'login-otp' | 'admin-login' | 'register' | 'verify-otp' | 'forgot-password' | 'reset-password'
+  const [otpPurpose, setOtpPurpose] = useState('register'); // 'register' | 'login'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -130,6 +131,23 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
       }
     } catch (err) {
       const msg = err.message || 'Invalid email or password.';
+      
+      // If email is unverified, trigger OTP verification flow
+      if (msg.includes('EMAIL_UNVERIFIED')) {
+        try {
+          await authService.resendOtp(email, 'EMAIL_VERIFICATION');
+        } catch {
+          // ignore
+        }
+        setOtpPurpose('register');
+        setOtpDigits(['', '', '', '', '', '']);
+        setCountdown(60);
+        setError(null);
+        setSuccessMessage('Your collector account requires email verification. A 6-digit code has been dispatched to your email.');
+        setMode('verify-otp');
+        return;
+      }
+
       setError(msg);
 
       if (mode === 'login') {
@@ -142,6 +160,25 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
           setSuggestRegister(true);
         }
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRequestLoginOtpSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      await authService.requestLoginOtp(email);
+      setOtpPurpose('login');
+      setOtpDigits(['', '', '', '', '', '']);
+      setCountdown(60);
+      setSuccessMessage('A single-use sign-in verification code has been dispatched to your email.');
+      setMode('verify-otp');
+    } catch (err) {
+      setError(err.message || 'Failed to dispatch sign-in code.');
     } finally {
       setLoading(false);
     }
@@ -265,7 +302,9 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
         password,
         phone,
       });
-      setSuccessMessage('Registration successful! Verification code dispatched to your email.');
+      setOtpPurpose('register');
+      setOtpDigits(['', '', '', '', '', '']);
+      setSuccessMessage('Registration submitted! Verification code dispatched to your email.');
       setCountdown(60);
       setMode('verify-otp');
     } catch (err) {
@@ -286,20 +325,21 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
     setError(null);
     setLoading(true);
     try {
-      await authService.verifyEmail(email, otp);
-      setSuccessMessage('Email verified successfully! Signing you in...');
-
-      setTimeout(async () => {
-        try {
-          if (password) {
-            const res = await authService.login(email, password);
-            if (onAuthSuccess) onAuthSuccess(res.user);
-          }
-        } catch {
-          // Ignored
-        }
-        onClose();
-      }, 1000);
+      if (otpPurpose === 'login') {
+        const data = await authService.verifyLoginOtp(email, otp);
+        setSuccessMessage('Sign-in verified successfully! Welcome back.');
+        setTimeout(() => {
+          if (onAuthSuccess) onAuthSuccess(data.user);
+          onClose();
+        }, 800);
+      } else {
+        const data = await authService.verifyEmail(email, otp);
+        setSuccessMessage('Email verified successfully! Welcome to REVERIE.');
+        setTimeout(() => {
+          if (onAuthSuccess) onAuthSuccess(data.user || data);
+          onClose();
+        }, 800);
+      }
     } catch (err) {
       setError(err.message || 'Invalid or expired verification code.');
     } finally {
@@ -362,17 +402,19 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
           </span>
           <h2 className="auth-modal-title font-display">
             {mode === 'login' && 'Collector Sign In'}
+            {mode === 'login-otp' && 'Sign In with Email Code'}
             {mode === 'admin-login' && 'Administrator Access'}
             {mode === 'register' && 'Create Collector Account'}
-            {mode === 'verify-otp' && 'Verify Your Email'}
+            {mode === 'verify-otp' && (otpPurpose === 'login' ? 'Enter Sign-In Code' : 'Verify Your Email')}
             {mode === 'forgot-password' && 'Reset Your Password'}
             {mode === 'reset-password' && 'Enter New Password'}
           </h2>
           <p className="auth-modal-subtitle font-ui">
             {mode === 'login' && 'Identify yourself to manage your timepiece acquisitions & certificates.'}
+            {mode === 'login-otp' && 'Enter your email to receive a secure single-use 6-digit verification code.'}
             {mode === 'admin-login' && 'Secured access for atelier management and inventory control.'}
             {mode === 'register' && 'Join the private registry for horological provenance and warranty tracking.'}
-            {mode === 'verify-otp' && `Enter the 6-digit verification code sent to ${email}.`}
+            {mode === 'verify-otp' && `Enter the 6-digit verification code dispatched to ${email}.`}
             {mode === 'forgot-password' && 'Enter your registered email to receive a secure recovery code.'}
             {mode === 'reset-password' && 'Enter the reset code and your new secure master password.'}
           </p>
@@ -409,6 +451,45 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
             <CheckCircle size={16} />
             <span>{successMessage}</span>
           </div>
+        )}
+
+        {mode === 'login-otp' && (
+          <form onSubmit={handleRequestLoginOtpSubmit} className="auth-form font-ui">
+            <div className="form-group">
+              <label htmlFor="auth-otp-email">Registered Email Address</label>
+              <div className="input-with-icon">
+                <Mail size={16} className="input-icon" />
+                <input
+                  id="auth-otp-email"
+                  type="email"
+                  required
+                  placeholder="name@domain.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                />
+              </div>
+            </div>
+
+            <div className="auth-submit-wrap">
+              <Button variant="primary" type="submit" className="auth-submit-btn" disabled={loading}>
+                {loading ? 'Dispatching Code...' : 'Send Single-Use Code'}
+              </Button>
+            </div>
+
+            <div className="auth-switch-footer font-ui">
+              <button
+                type="button"
+                className="auth-switch-link"
+                onClick={() => {
+                  setError(null);
+                  setMode('login');
+                }}
+              >
+                ← Return to Password Sign In
+              </button>
+            </div>
+          </form>
         )}
 
         {(mode === 'login' || mode === 'admin-login') && (
@@ -488,33 +569,50 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
             </div>
 
             {mode === 'login' && (
-              <div className="auth-switch-footer font-ui">
-                <span>New collector?</span>{' '}
-                <button
-                  type="button"
-                  className="auth-switch-link"
-                  onClick={() => {
-                    setError(null);
-                    setSuggestRegister(false);
-                    setMode('register');
-                  }}
-                >
-                  Create an Account
-                </button>
-                <div className="auth-admin-switch">
+              <>
+                <div style={{ textAlign: 'center', marginTop: '12px' }}>
                   <button
                     type="button"
                     className="auth-link-muted"
+                    style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                     onClick={() => {
                       setError(null);
                       setSuggestRegister(false);
-                      setMode('admin-login');
+                      setMode('login-otp');
                     }}
                   >
-                    <KeyRound size={12} /> Atelier Staff Portal
+                    <Mail size={13} /> Sign In with Email Verification Code instead
                   </button>
                 </div>
-              </div>
+
+                <div className="auth-switch-footer font-ui">
+                  <span>New collector?</span>{' '}
+                  <button
+                    type="button"
+                    className="auth-switch-link"
+                    onClick={() => {
+                      setError(null);
+                      setSuggestRegister(false);
+                      setMode('register');
+                    }}
+                  >
+                    Create an Account
+                  </button>
+                  <div className="auth-admin-switch">
+                    <button
+                      type="button"
+                      className="auth-link-muted"
+                      onClick={() => {
+                        setError(null);
+                        setSuggestRegister(false);
+                        setMode('admin-login');
+                      }}
+                    >
+                      <KeyRound size={12} /> Atelier Staff Portal
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
 
             {mode === 'admin-login' && (
@@ -688,7 +786,11 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
                       try {
                         setCountdown(60);
                         setError(null);
-                        await authService.resendOtp(email, 'EMAIL_VERIFICATION');
+                        if (otpPurpose === 'login') {
+                          await authService.requestLoginOtp(email);
+                        } else {
+                          await authService.resendOtp(email, 'EMAIL_VERIFICATION');
+                        }
                         setSuccessMessage('A fresh verification code was dispatched to your email.');
                       } catch (err) {
                         setError(err.message || 'Failed to resend code.');
@@ -703,7 +805,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
 
             <div className="auth-submit-wrap">
               <Button variant="primary" type="submit" className="auth-submit-btn" disabled={loading}>
-                {loading ? 'Verifying Code...' : 'Verify & Activate Account'}
+                {loading ? 'Verifying Code...' : otpPurpose === 'login' ? 'Verify & Sign In' : 'Verify & Activate Account'}
               </Button>
             </div>
 
@@ -713,10 +815,10 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
                 className="auth-switch-link"
                 onClick={() => {
                   setError(null);
-                  setMode('register');
+                  setMode(otpPurpose === 'login' ? 'login' : 'register');
                 }}
               >
-                ← Back to Registration
+                ← {otpPurpose === 'login' ? 'Return to Sign In' : 'Back to Registration'}
               </button>
             </div>
           </form>

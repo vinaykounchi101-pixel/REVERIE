@@ -20,9 +20,14 @@ export default function Header() {
 
   const isDarkTop = pathname === '/' && !isScrolled;
 
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   useEffect(() => {
     setMounted(true);
     setCurrentUser(authService.getCurrentUser());
+
     const handleAuthChange = () => {
       setCurrentUser(authService.getCurrentUser());
     };

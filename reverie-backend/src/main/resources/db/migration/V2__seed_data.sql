@@ -140,7 +140,7 @@ VALUES
     (
         '40000000-0000-0000-0000-000000000001',
         'admin@reverie.app',
-        '$2a$10$7Q7xQeGvhj9.dF5qA4v2t.Gf889Q/N0q0jL8g.jPzC8x8e5Vj8vYm',
+        '$2a$10$ThDgiVLwLtidW2lII1jws.UxE78hqJWao94UCeS1E.klZICAECbFW',
         'Master',
         'Administrator',
         'SUPER_ADMIN',
@@ -150,7 +150,7 @@ VALUES
     (
         '40000000-0000-0000-0000-000000000002',
         'client@reverie.app',
-        '$2a$10$7Q7xQeGvhj9.dF5qA4v2t.Gf889Q/N0q0jL8g.jPzC8x8e5Vj8vYm',
+        '$2a$10$ThDgiVLwLtidW2lII1jws.UxE78hqJWao94UCeS1E.klZICAECbFW',
         'Alexander',
         'Vane',
         'CUSTOMER',

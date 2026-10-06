@@ -1,6 +1,9 @@
 package com.reverie.user.repository;
 
+import com.reverie.user.entity.Role;
 import com.reverie.user.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,5 +17,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     boolean existsByEmail(String email);
 
-    long countByRole(com.reverie.user.entity.Role role);
+    long countByRole(Role role);
+
+    Page<User> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    Page<User> findByRoleOrderByCreatedAtDesc(Role role, Pageable pageable);
+
+    Page<User> findByEmailContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrderByCreatedAtDesc(
+            String email, String firstName, String lastName, Pageable pageable);
 }

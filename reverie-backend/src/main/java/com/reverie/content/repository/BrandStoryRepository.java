@@ -17,4 +17,6 @@ public interface BrandStoryRepository extends JpaRepository<BrandStory, UUID> {
     Optional<BrandStory> findBySlug(String slug);
 
     Page<BrandStory> findByIsPublishedTrueOrderByCreatedAtDesc(Pageable pageable);
+
+    Page<BrandStory> findAllByOrderByCreatedAtDesc(Pageable pageable);
 }

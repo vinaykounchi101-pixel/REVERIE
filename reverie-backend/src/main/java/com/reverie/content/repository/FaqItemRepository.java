@@ -13,4 +13,6 @@ public interface FaqItemRepository extends JpaRepository<FaqItem, UUID> {
     List<FaqItem> findByIsPublishedTrueOrderByDisplayOrderAsc();
 
     List<FaqItem> findByCategoryAndIsPublishedTrueOrderByDisplayOrderAsc(String category);
+
+    List<FaqItem> findAllByOrderByDisplayOrderAsc();
 }

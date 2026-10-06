@@ -68,6 +68,13 @@ public class ContentService {
         return FaqDto.fromEntity(item);
     }
 
+    @Transactional(readOnly = true)
+    public List<FaqDto> getAllFaqsForAdmin() {
+        return faqRepository.findAllByOrderByDisplayOrderAsc().stream()
+                .map(FaqDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public void deleteFaq(UUID faqId, UUID adminId) {
         FaqItem item = faqRepository.findById(faqId)
@@ -82,6 +89,12 @@ public class ContentService {
     @Transactional(readOnly = true)
     public Page<BrandStoryDto> getPublishedStories(Pageable pageable) {
         return storyRepository.findByIsPublishedTrueOrderByCreatedAtDesc(pageable)
+                .map(BrandStoryDto::fromEntity);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<BrandStoryDto> getAllStoriesForAdmin(Pageable pageable) {
+        return storyRepository.findAllByOrderByCreatedAtDesc(pageable)
                 .map(BrandStoryDto::fromEntity);
     }
 

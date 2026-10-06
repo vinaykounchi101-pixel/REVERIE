@@ -14,6 +14,8 @@ REVERIE is a luxury Haute Horlogerie e-commerce platform built with a high-perfo
 
 ```text
 [ Next.js 14 Client App (Port 3000) ]
+   ├── Services Layer (apiClient, orderService, customerService, catalogService, authService)
+   └── React Contexts (CartContext, WishlistContext)
               │
        (HTTP / REST + Bearer JWT)
               ▼
@@ -58,11 +60,13 @@ REVERIE is a luxury Haute Horlogerie e-commerce platform built with a high-perfo
 
 | Method | Endpoint | Description | Auth Required |
 |---|---|---|---|
-| `POST` | `/api/auth/register` | Customer registration | No |
-| `POST` | `/api/auth/login` | Email/password login | No |
+| `POST` | `/api/auth/register` | Customer registration (dispatches 6-digit OTP) | No |
+| `POST` | `/api/auth/verify-email` | Verify registration email OTP and return JWT session | No |
+| `POST` | `/api/auth/login` | Email/password login (requires verified email) | No |
+| `POST` | `/api/auth/otp/request` | Request single-use 6-digit sign-in OTP code | No |
+| `POST` | `/api/auth/otp/verify` | Verify sign-in OTP and authenticate | No |
+| `POST` | `/api/auth/resend-otp` | Resend verification or reset OTP | No |
 | `POST` | `/api/auth/google` | Google OAuth token exchange | No |
-| `POST` | `/api/auth/otp/request` | Request OTP code | No |
-| `POST` | `/api/auth/otp/verify` | Verify OTP and authenticate | No |
 | `POST` | `/api/auth/admin/login` | Atelier admin login | No (Role-enforced) |
 | `GET` | `/api/catalog/products` | Paginated product search & filters | No |
 | `GET` | `/api/catalog/products/{slug}` | Product details by slug | No |
@@ -75,13 +79,30 @@ REVERIE is a luxury Haute Horlogerie e-commerce platform built with a high-perfo
 | `GET` | `/api/customers/me/addresses` | List customer shipping addresses | Customer |
 | `POST` | `/api/customers/me/addresses` | Create shipping address | Customer |
 | `GET` | `/api/admin/overview` | Admin executive analytics | Admin |
+| `GET` | `/api/orders/admin/all` | Paginated admin order management | Admin |
+| `GET` | `/api/shipments/admin/all` | Insured courier shipment tracking | Admin |
+| `GET` | `/api/returns/admin/all` | Horological return/vault inspection requests | Admin |
+| `GET` | `/api/concierge/admin/all` | VIP atelier boutique bookings | Admin |
+| `GET` | `/api/support/tickets/admin/all` | Customer concierge support tickets | Admin |
+| `GET` | `/api/reviews/admin/all` | Moderated timepiece reviews | Admin |
+| `POST` | `/api/admin/inventory/adjust` | Manual inventory ledger correction | Admin |
+| `GET` | `/api/admin/users` | Collector and staff account management | Admin |
+| `GET` | `/api/admin/faqs` | Knowledgebase FAQ management | Admin |
+| `GET` | `/api/admin/stories` | Atelier brand editorial & heritage stories | Admin |
+| `GET` | `/api/admin/audit` | Append-only security audit log stream | Admin |
 
 ---
 
-## 5. Security Principles
+## 5. Security & Verification Architecture
 
+- **Mandatory Email Verification**: Public registrations create unverified accounts requiring single-use 6-digit cryptographic OTP token verification before granting standard access.
+- **Login Verification Enforcement**: Unverified users attempting credential-based login are rejected with RFC 7807 `FORBIDDEN (EMAIL_UNVERIFIED)` and guided through the verification challenge.
+- **Passwordless / 2FA Email Sign-In**: Dedicated `/api/auth/otp/request` and `/api/auth/otp/verify` endpoints provide passwordless one-time verification authentication.
+- **Brevo & SMTP Transactional Notification Engine**: `EmailService` transmits luxury HTML formatted transactional emails via Brevo API v3 (`https://api.brevo.com/v3/smtp/email` with header `api-key`) and SMTP fallback.
+- **Dynamic Runtime Environment Ingestion**: `ReverieApplication.java` ingests `.env` parameters into JVM system properties on startup.
+- **Session Sanitization**: `authService.js` automatically discards and clears unverified accounts, invalid tokens, or stale mock sessions.
 - **No Hardcoded Secrets**: All credentials, JWT keys, and API tokens are resolved via environment variables.
 - **Monetary Precision**: All currency calculations are handled as 64-bit integer paise/cents to avoid floating-point inaccuracies.
-- **Zero Raw OTP Logging**: OTPs are masked and never logged in plain text.
+- **Zero Raw OTP Logging**: OTPs are hashed using SHA-256 and never logged in plain text.
 - **Strict CORS**: Origins strictly validated against configured domains in production.
 - **Append-Only Audit Logs**: Every administrative and security-critical action is logged with actor, timestamp, IP, and action metadata.
