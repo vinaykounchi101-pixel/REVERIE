@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/reverie_db}
-    username: ${DB_USER:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: ${DB_URL:${SPRING_DATASOURCE_URL:${DATABASE_URL:jdbc:postgresql://localhost:5432/reverie_db}}}
+    username: ${DB_USER:${SPRING_DATASOURCE_USERNAME:${POSTGRES_USER:postgres}}}
+    password: ${DB_PASSWORD:${SPRING_DATASOURCE_PASSWORD:${POSTGRES_PASSWORD:${DATABASE_PASSWORD:postgres}}}}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10

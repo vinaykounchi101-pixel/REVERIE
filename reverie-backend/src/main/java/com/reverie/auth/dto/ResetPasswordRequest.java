@@ -31,6 +31,9 @@ public class ResetPasswordRequest {
     public String getToken() { return token; }
     public void setToken(String token) { this.token = token; }
 
+    public String getOtp() { return token; }
+    public void setOtp(String otp) { if (this.token == null || this.token.isBlank()) this.token = otp; }
+
     public String getNewPassword() { return newPassword; }
     public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
 }

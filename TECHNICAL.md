@@ -14,7 +14,7 @@ REVERIE is a luxury Haute Horlogerie e-commerce platform built with a high-perfo
 
 ```text
 [ Next.js 14 Client App (Port 3000) ]
-   ├── Services Layer (apiClient, orderService, customerService, catalogService, authService)
+   ├── Services Layer (apiClient, authService, catalogService, cartService, wishlistService, orderService, paymentService, customerService, conciergeService, supportService, returnService, reviewService)
    └── React Contexts (CartContext, WishlistContext)
               │
        (HTTP / REST + Bearer JWT)
@@ -28,8 +28,14 @@ REVERIE is a luxury Haute Horlogerie e-commerce platform built with a high-perfo
   ├── AuthController (/api/auth)
   ├── CatalogController (/api/catalog, /api/watches)
   ├── CartController (/api/cart)
+  ├── WishlistController (/api/wishlist)
   ├── OrderController (/api/orders)
   ├── PaymentController (/api/payments)
+  ├── ShipmentController (/api/shipments)
+  ├── ReturnController (/api/returns)
+  ├── ConciergeController (/api/concierge)
+  ├── SupportController (/api/support)
+  ├── ReviewController (/api/reviews)
   ├── CustomerAddressController (/api/customers/me/addresses)
   └── AdminController (/api/admin)
               ▼

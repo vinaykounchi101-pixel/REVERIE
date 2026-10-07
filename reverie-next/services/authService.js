@@ -333,7 +333,7 @@ export const authService = {
     const res = await fetch(`${API_BASE}/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.trim(), otp: otp.trim(), newPassword }),
+      body: JSON.stringify({ email: email.trim(), token: otp.trim(), otp: otp.trim(), newPassword }),
     });
 
     const json = await res.json().catch(() => ({}));

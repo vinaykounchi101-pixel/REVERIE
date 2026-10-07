@@ -120,8 +120,8 @@ export default function AdminPortalPage() {
     setErrorMsg('');
 
     try {
-      const authData = await authService.login(email, password);
-      if (authData.user && (authData.user.role === 'ADMIN' || authData.user.role === 'SUPER_ADMIN')) {
+      const authData = await authService.adminLogin(email, password);
+      if (authData.user && (authData.user.role === 'ADMIN' || authData.user.role === 'SUPER_ADMIN' || authData.user.role === 'CONTENT_MGR' || authData.user.role === 'PRODUCT_MGR' || authData.user.role === 'INVENTORY_MGR' || authData.user.role === 'ORDER_MGR' || authData.user.role === 'SUPPORT_AGENT' || authData.user.role === 'ANALYST')) {
         setCurrentUser(authData.user);
       } else {
         setErrorMsg('Access restricted. Only certified Atelier Administrators may enter.');

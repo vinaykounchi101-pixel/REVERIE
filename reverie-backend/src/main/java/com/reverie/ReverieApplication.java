@@ -23,13 +23,16 @@ public class ReverieApplication {
     }
 
     private static void loadDotEnvIfPresent() {
+        String userDir = System.getProperty("user.dir", ".");
         File[] candidates = new File[] {
             new File(".env"),
             new File("../.env"),
-            new File("../../.env")
+            new File(userDir, ".env"),
+            new File(new File(userDir).getParentFile(), ".env"),
+            new File("E:/Projects/REVERIE/.env")
         };
         for (File file : candidates) {
-            if (file.exists() && file.isFile()) {
+            if (file != null && file.exists() && file.isFile()) {
                 try (BufferedReader reader = new BufferedReader(new FileReader(file, StandardCharsets.UTF_8))) {
                     String line;
                     int loadedCount = 0;
@@ -45,12 +48,10 @@ public class ReverieApplication {
                             (value.startsWith("'") && value.endsWith("'"))) {
                             value = value.substring(1, value.length() - 1);
                         }
-                        if (System.getProperty(key) == null && System.getenv(key) == null) {
-                            System.setProperty(key, value);
-                            loadedCount++;
-                        }
+                        System.setProperty(key, value);
+                        loadedCount++;
                     }
-                    log.info("[ENV LOADER] Initialized {} environment properties from active environment file.", loadedCount);
+                    log.info("[ENV LOADER] Initialized {} environment properties from active environment file at {}", loadedCount, file.getAbsolutePath());
                 } catch (Exception ignored) {
                 }
                 break;

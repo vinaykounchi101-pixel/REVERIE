@@ -58,13 +58,13 @@ app:
   frontend-origin: ${FRONTEND_ORIGIN:http://localhost:3000,http://localhost:3001}
   mail:
     provider: ${EMAIL_PROVIDER:auto}
-    from-address: ${MAIL_FROM_ADDRESS:${BREVO_SENDER_EMAIL:${BREVO_FROM_EMAIL:${SENDER_EMAIL:${SPRING_MAIL_USERNAME:concierge@reverie.luxury}}}}}
+    from-address: ${MAIL_FROM_ADDRESS:${BREVO_SENDER_EMAIL:${BREVO_FROM_EMAIL:${BREVO_USER:${BREVO_EMAIL:${SENDER_EMAIL:${SPRING_MAIL_USERNAME:concierge@reverie.luxury}}}}}}
     from-name: ${MAIL_FROM_NAME:REVERIE Haute Horlogerie}
     resend:
       api-key: ${RESEND_API_KEY:}
       api-url: ${RESEND_API_URL:https://api.resend.com/emails}
     brevo:
-      api-key: ${BREVO_API_KEY:${BREVO_KEY:${SENDINBLUE_API_KEY:}}}
+      api-key: ${BREVO_API_KEY:${BREVO_KEY:${BREVO_APIKEY:${SENDINBLUE_API_KEY:${SENDINBLUE_KEY:${BREVO_SMTP_KEY:}}}}}}
       api-url: ${BREVO_API_URL:https://api.brevo.com/v3/smtp/email}
   auth:
     jwt-secret: ${JWT_SECRET:reverie-default-ultra-secure-development-jwt-secret-key-32bytes-min}
