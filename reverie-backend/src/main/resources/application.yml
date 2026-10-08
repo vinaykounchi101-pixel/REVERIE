@@ -25,7 +25,7 @@ spring:
           writetimeout: 5000
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${PORT:${SERVER_PORT:8080}}
   error:
     include-message: never
     include-binding-errors: never
