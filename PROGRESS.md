@@ -140,13 +140,28 @@
 - **Compulsory Email Verification & Brevo Password Reset OTP**:
   - Validated strict compulsory verification across registration (`isVerified = false` default), login challenge rejection (`FORBIDDEN: EMAIL_UNVERIFIED`), and password reset OTP workflows (`setOtp` alias in [ResetPasswordRequest.java](file:///e:/Projects/REVERIE/reverie-backend/src/main/java/com/reverie/auth/dto/ResetPasswordRequest.java)).
   - Ensured single-use cryptographic token delivery via Brevo REST API v3.
-- **Verification Summary**:
-  - Spring Boot backend: 39/39 passing test suites (`mvn test`).
-  - Next.js storefront: Compiled cleanly (`npm run build`).
+### Sprint 15: High-Res Horological Photography, Women's Watch Line, PostgreSQL Admin CRUD & Razorpay Gateway Integration
+- **Photography & Multi-Angle Asset Pipeline**:
+  - Upgraded catalog records with high-resolution studio assets (`watch-celeste-diamond-front.jpg`, `watch-etoile-front.jpg`, `watch-heritage-gold-front.jpg`, `watch-skeleton-women-front.jpg`, `watch-classic-blue-front.jpg`, `watch-chrono-front.jpg`, `watch-malachite-front.jpg`) and seeded multi-angle craftsmanship gallery media.
+- **Database Migrations (Flyway V6 & V7)**:
+  - `V6__alter_image_to_text_and_add_women_watches.sql`: Altered `primary_image_url`, `model_3d_url`, `product_media.url`, and `collections.hero_image_url` to `TEXT`. Seeded 4 Women's Haute Horlogerie models (*Aura Petit Diamond*, *Luna Pearl*, *Sovereign Rose*, *Elysium Sapphire*).
+  - `V7__update_watch_images_and_catalog.sql`: Updated catalog references to high-res assets and seeded multi-angle gallery media.
+- **Admin Timepiece Management & Storefront Synchronization**:
+  - Enhanced `AdminProductRequest.java` to flexibly handle both `title` and `name`, `price` and `basePricePaise`, and default fallbacks without Jakarta Bean Validation 400 errors.
+  - Upgraded `adminServices.js` `adminProductService` to format payloads and eliminate silent mock traps, ensuring immediate database synchronization (`await fetchProducts()`).
+  - Enhanced `CatalogService.java` to seamlessly resolve products by either UUID or Slug.
+- **Razorpay Payment Gateway Integration**:
+  - Implemented dynamic loading of Razorpay checkout SDK (`checkout.js`) in `reverie-next/app/checkout/page.jsx`.
+  - Connected `paymentService.js` with `/api/payments/initiate` and `/api/payments/verify` with HMAC-SHA256 signature verification.
+  - Added dedicated Razorpay payment tab with gold accents, 256-bit SSL trust indicators, and automatic status transition to `CAPTURED`.
+- **Git Branch Consolidation & Cloud Deployment Ready**:
+  - Merged `dev` into `main`, deleted `dev`, and pushed clean tree to `origin/main`.
+  - Configured dynamic port binding `${PORT:${SERVER_PORT:8080}}` for Render deployment and generated comment-free `.env.deployment`.
 
 ---
 
 ## Test & Build Verification Summary
-- **Backend Tests**: 39/39 passing test suites (`mvn test`), covering authentication, authorization, catalog, cart, orders, payments, shipments, concierge, reviews, returns, and support.
-- **Frontend Build**: 15/15 static & dynamic routes compiled cleanly (`npm run build`).
+- **Backend Tests & Build**: 39/39 passing test suites (`mvn test`) and clean compilation (`mvn compile -DskipTests`).
+- **Frontend Build**: 15/15 static & dynamic routes compiled cleanly with 0 errors (`npm run build`).
+- **Database**: PostgreSQL with Flyway V1 through V7 migrations validated.
 - **Daemons**: Spring Boot (port 8080), Next.js (port 3000), and PostgreSQL (port 5432) active and fully integrated.

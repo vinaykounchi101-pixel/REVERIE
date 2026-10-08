@@ -59,6 +59,8 @@ REVERIE is a luxury Haute Horlogerie e-commerce platform built with a high-perfo
 3. `V3__cart_and_inventory.sql`: Persistent carts (`carts`, `cart_items`) and inventory reservations.
 4. `V4__payments_and_shipments.sql`: Payment transactions (`payments`), webhook events (`webhook_events`), and insured shipment tracking (`shipments`).
 5. `V5__reviews_and_concierge.sql`: Product reviews (`reviews`) and VIP concierge atelier appointment bookings (`concierge_appointments`).
+6. `V6__alter_image_to_text_and_add_women_watches.sql`: Upgraded media URLs to `TEXT` and seeded 4 Women's Haute Horlogerie models (*Aura Petit Diamond*, *Luna Pearl*, *Sovereign Rose*, *Elysium Sapphire*).
+7. `V7__update_watch_images_and_catalog.sql`: Updated timepiece records to high-resolution studio assets and seeded multi-angle gallery media.
 
 ---
 
