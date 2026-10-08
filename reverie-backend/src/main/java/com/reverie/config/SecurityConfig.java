@@ -51,6 +51,7 @@ public class SecurityConfig {
                 // Public Auth, Webhooks & Cart
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/webhooks/**").permitAll()
+                .requestMatchers("/api/v1/payments/webhook/**", "/api/v1/payments/webhook").permitAll()
                 .requestMatchers("/api/cart/**").permitAll()
 
                 // Public Read-Only Catalog & Content

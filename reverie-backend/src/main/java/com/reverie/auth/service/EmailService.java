@@ -137,6 +137,28 @@ public class EmailService {
         dispatchEmail(toEmail, subject, htmlContent, otpCode, "PASSWORD_RESET");
     }
 
+    /**
+     * Sends the official Welcome Email upon successful registration and email verification
+     */
+    public void sendWelcomeEmail(String toEmail, String recipientName) {
+        String subject = "REVERIE — Welcome to the Haute Horlogerie Atelier";
+        String name = (recipientName != null && !recipientName.isBlank()) ? recipientName : "Valued Collector";
+
+        String htmlContent = buildWelcomeEmailHtml(name);
+        dispatchEmail(toEmail, subject, htmlContent, "WELCOME", "WELCOME");
+    }
+
+    /**
+     * Sends the official Order Invoice & Consignment Receipt Email
+     */
+    public void sendOrderInvoiceEmail(String toEmail, String recipientName, String orderNumber, long totalPaise, String currency, String paymentMethod, String address, List<Map<String, Object>> items) {
+        String subject = "REVERIE — Official Invoice & Consignment Receipt #" + orderNumber;
+        String name = (recipientName != null && !recipientName.isBlank()) ? recipientName : "Valued Collector";
+
+        String htmlContent = buildInvoiceEmailHtml(name, orderNumber, totalPaise, currency, paymentMethod, address, items);
+        dispatchEmail(toEmail, subject, htmlContent, orderNumber, "ORDER_INVOICE");
+    }
+
     private String resolveBrevoApiKey() {
         if (brevoApiKey != null && !brevoApiKey.isBlank() && !brevoApiKey.contains("${")) return brevoApiKey.trim();
         for (String k : List.of("BREVO_API_KEY", "BREVO_KEY", "BREVO_APIKEY", "SENDINBLUE_API_KEY", "SENDINBLUE_KEY", "BREVO_SMTP_KEY")) {
@@ -430,6 +452,238 @@ public class EmailService {
                 .replace("{{BODY_TEXT}}", bodyText != null ? bodyText : "")
                 .replace("{{CODE}}", code != null ? code : "")
                 .replace("{{FOOTER_NOTE}}", footerNote != null ? footerNote : "")
+                .replace("{{YEAR}}", String.valueOf(java.time.Year.now().getValue()));
+    }
+
+    private String buildWelcomeEmailHtml(String recipientName) {
+        String template = """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Welcome to REVERIE</title>
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #0b0c10; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e2e4e9;">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #0b0c10; padding: 40px 20px;">
+                    <tr>
+                        <td align="center">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #121318; border: 1px solid #232530; border-radius: 8px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+                                <tr>
+                                    <td align="center" style="padding: 40px 30px 24px 30px; border-bottom: 1px solid #1c1e26; background: #181920;">
+                                        <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; color: #c5a059; margin-bottom: 8px;">
+                                            COLLECTOR ONBOARDING
+                                        </div>
+                                        <div style="font-size: 28px; font-weight: 300; letter-spacing: 0.3em; text-transform: uppercase; color: #ffffff; margin: 0;">
+                                            R E V E R I E
+                                        </div>
+                                        <div style="font-size: 9px; font-weight: 500; letter-spacing: 0.35em; text-transform: uppercase; color: #888d9a; margin-top: 6px;">
+                                            Genève • Haute Horlogerie
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 36px 36px 28px 36px;">
+                                        <p style="font-size: 16px; font-weight: 600; color: #ffffff; margin: 0 0 16px 0;">
+                                            Dear {{NAME}},
+                                        </p>
+                                        <p style="font-size: 14px; line-height: 1.7; color: #b5b9c7; margin: 0 0 20px 0;">
+                                            It is our distinct privilege to welcome you to the <strong>REVERIE Manufacture</strong>. Your collector portfolio has been successfully authenticated, granting you bespoke access to our handcrafted horological creations, Salon Privé appointments, and archival timepiece acquisitions.
+                                        </p>
+                                        
+                                        <div style="background-color: #0e0f14; border: 1px solid #242733; border-radius: 6px; padding: 20px; margin: 24px 0;">
+                                            <div style="font-size: 12px; font-weight: 700; color: #d4af37; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px;">
+                                                Your Privileged Benefits
+                                            </div>
+                                            <ul style="font-size: 13px; line-height: 1.8; color: #9da2b3; margin: 0; padding-left: 20px;">
+                                                <li><strong>5-Year Global Atelier Warranty</strong> with certified Swiss provenance seal.</li>
+                                                <li><strong>Armored Courier Handover</strong> with end-to-end multi-currency insurance.</li>
+                                                <li><strong>Direct Salon Concierge Access</strong> for bespoke fittings and calibre servicing.</li>
+                                                <li><strong>Curated Timepiece Wishlist &amp; Vault Allocation</strong> tracking.</li>
+                                            </ul>
+                                        </div>
+
+                                        <p style="font-size: 13px; line-height: 1.6; color: #888d9a; margin: 24px 0 0 0;">
+                                            Should you require custom consultations regarding rare calibre references or private salon bookings in Geneva or Zurich, our horological advisors remain at your disposal.
+                                        </p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="padding: 24px 30px; background-color: #0e0f14; border-top: 1px solid #1c1e26;">
+                                        <p style="font-size: 11px; color: #5f6371; line-height: 1.6; margin: 0;">
+                                            © {{YEAR}} REVERIE SA. All rights reserved.<br>
+                                            Manufacture Horlogère Suisse, Rue du Rhône, 1204 Genève, Switzerland.<br>
+                                            Inquiries: concierge@reverie.luxury
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+            """;
+        return template
+                .replace("{{NAME}}", recipientName != null ? recipientName : "Valued Collector")
+                .replace("{{YEAR}}", String.valueOf(java.time.Year.now().getValue()));
+    }
+
+    private String buildInvoiceEmailHtml(String name, String orderNumber, long totalPaise, String currency, String paymentMethod, String address, List<Map<String, Object>> items) {
+        StringBuilder itemsHtml = new StringBuilder();
+        long subtotalPaise = 0L;
+
+        if (items != null && !items.isEmpty()) {
+            for (Map<String, Object> it : items) {
+                String title = String.valueOf(it.getOrDefault("name", "Haute Horlogerie Reference"));
+                String sku = String.valueOf(it.getOrDefault("sku", "R01-CALIBRE"));
+                int qty = it.get("quantity") instanceof Number ? ((Number) it.get("quantity")).intValue() : 1;
+                long unitPricePaise = it.get("unitPricePaise") instanceof Number ? ((Number) it.get("unitPricePaise")).longValue() : 0L;
+                if (unitPricePaise == 0L && it.get("price") instanceof Number) {
+                    unitPricePaise = ((Number) it.get("price")).longValue() * 100L;
+                }
+                long lineTotalPaise = unitPricePaise * qty;
+                subtotalPaise += lineTotalPaise;
+
+                double displayUnitPrice = unitPricePaise / 100.0;
+                double displayLineTotal = lineTotalPaise / 100.0;
+
+                itemsHtml.append("<tr style=\"border-bottom: 1px solid #1c1e26;\">")
+                        .append("<td style=\"padding: 14px 8px; font-size: 13px; color: #ffffff;\">")
+                        .append("<strong>").append(title).append("</strong><br>")
+                        .append("<span style=\"font-size: 11px; color: #888d9a;\">Ref: ").append(sku).append("</span>")
+                        .append("</td>")
+                        .append("<td align=\"center\" style=\"padding: 14px 8px; font-size: 13px; color: #b5b9c7;\">").append(qty).append("</td>")
+                        .append("<td align=\"right\" style=\"padding: 14px 8px; font-size: 13px; color: #b5b9c7;\">$").append(String.format("%,.2f", displayUnitPrice)).append("</td>")
+                        .append("<td align=\"right\" style=\"padding: 14px 8px; font-size: 13px; font-weight: 600; color: #d4af37;\">$").append(String.format("%,.2f", displayLineTotal)).append("</td>")
+                        .append("</tr>");
+            }
+        }
+
+        double displayTotal = totalPaise > 0 ? (totalPaise / 100.0) : (subtotalPaise * 1.18 / 100.0);
+        double displayTax = (subtotalPaise * 0.18) / 100.0;
+        double displaySubtotal = subtotalPaise / 100.0;
+
+        String template = """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>REVERIE Acquisition Invoice</title>
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #0b0c10; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e2e4e9;">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #0b0c10; padding: 40px 20px;">
+                    <tr>
+                        <td align="center">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 640px; background-color: #121318; border: 1px solid #232530; border-radius: 8px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+                                
+                                <tr>
+                                    <td align="center" style="padding: 40px 30px 24px 30px; border-bottom: 1px solid #1c1e26; background: #181920;">
+                                        <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; color: #c5a059; margin-bottom: 8px;">
+                                            OFFICIAL CONSIGNMENT INVOICE
+                                        </div>
+                                        <div style="font-size: 28px; font-weight: 300; letter-spacing: 0.3em; text-transform: uppercase; color: #ffffff; margin: 0;">
+                                            R E V E R I E
+                                        </div>
+                                        <div style="font-size: 9px; font-weight: 500; letter-spacing: 0.35em; text-transform: uppercase; color: #888d9a; margin-top: 6px;">
+                                            Manufacture Horlogère Suisse • Genève
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding: 32px 36px 20px 36px;">
+                                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
+                                            <tr>
+                                                <td valign="top" style="font-size: 13px; color: #888d9a; line-height: 1.6;">
+                                                    <strong style="color: #ffffff; font-size: 14px;">Billed To:</strong><br>
+                                                    {{NAME}}<br>
+                                                    {{ADDRESS}}
+                                                </td>
+                                                <td valign="top" align="right" style="font-size: 13px; color: #888d9a; line-height: 1.6;">
+                                                    <strong style="color: #ffffff; font-size: 14px;">Invoice Details:</strong><br>
+                                                    Order #: <span style="color: #d4af37; font-weight: 600;">{{ORDER_NUMBER}}</span><br>
+                                                    Date: {{DATE}}<br>
+                                                    Payment: <span style="color: #ffffff;">{{PAYMENT_METHOD}}</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse; margin-top: 16px; margin-bottom: 24px;">
+                                            <thead>
+                                                <tr style="border-bottom: 2px solid #2b2e3b; background: #0d0e13;">
+                                                    <th align="left" style="padding: 10px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #888d9a;">Timepiece Reference</th>
+                                                    <th align="center" style="padding: 10px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #888d9a;">Qty</th>
+                                                    <th align="right" style="padding: 10px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #888d9a;">Unit Price</th>
+                                                    <th align="right" style="padding: 10px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #888d9a;">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {{ITEMS_ROWS}}
+                                            </tbody>
+                                        </table>
+
+                                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top: 12px; margin-bottom: 24px;">
+                                            <tr>
+                                                <td width="55%"></td>
+                                                <td width="45%">
+                                                    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="font-size: 13px; color: #888d9a; line-height: 1.8;">
+                                                        <tr>
+                                                            <td>Subtotal:</td>
+                                                            <td align="right" style="color: #ffffff;">${{SUBTOTAL}}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Insured Courier Handover:</td>
+                                                            <td align="right" style="color: #d4af37;">COMPLIMENTARY</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Swiss VAT &amp; Customs (18%):</td>
+                                                            <td align="right" style="color: #ffffff;">${{TAX}}</td>
+                                                        </tr>
+                                                        <tr style="border-top: 1px solid #2b2e3b;">
+                                                            <td style="padding-top: 8px; font-size: 15px; font-weight: 700; color: #ffffff;">Total Paid:</td>
+                                                            <td align="right" style="padding-top: 8px; font-size: 16px; font-weight: 700; color: #d4af37;">${{TOTAL}} USD</td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <div style="background-color: #0e0f14; border: 1px solid #242733; border-radius: 6px; padding: 16px; font-size: 12px; color: #888d9a; line-height: 1.6;">
+                                            <strong style="color: #d4af37;">Consignment Security:</strong> This receipt serves as certified proof of purchase and triggers your 5-Year Global Atelier Warranty. Keep this reference for vault servicing and provenance transfer.
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td align="center" style="padding: 24px 30px; background-color: #0e0f14; border-top: 1px solid #1c1e26;">
+                                        <p style="font-size: 11px; color: #5f6371; line-height: 1.6; margin: 0;">
+                                            © {{YEAR}} REVERIE SA. All rights reserved.<br>
+                                            Manufacture Horlogère Suisse, Rue du Rhône, 1204 Genève, Switzerland.<br>
+                                            Insured tracking &amp; documentation.
+                                        </p>
+                                    </td>
+                                </tr>
+
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+            """;
+
+        return template
+                .replace("{{NAME}}", name != null ? name : "Valued Collector")
+                .replace("{{ADDRESS}}", address != null && !address.isBlank() ? address : "Insured Delivery Destination")
+                .replace("{{ORDER_NUMBER}}", orderNumber != null ? orderNumber : "REV-ORD")
+                .replace("{{DATE}}", java.time.LocalDate.now().toString())
+                .replace("{{PAYMENT_METHOD}}", paymentMethod != null ? paymentMethod : "Direct Secure Gateway")
+                .replace("{{ITEMS_ROWS}}", itemsHtml.toString())
+                .replace("{{SUBTOTAL}}", String.format("%,.2f", displaySubtotal))
+                .replace("{{TAX}}", String.format("%,.2f", displayTax))
+                .replace("{{TOTAL}}", String.format("%,.2f", displayTotal))
                 .replace("{{YEAR}}", String.valueOf(java.time.Year.now().getValue()));
     }
 }

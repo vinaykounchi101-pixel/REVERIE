@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useParams } from 'next/navigation';
-import { CheckCircle2, Truck, PackageCheck, MapPin, Search } from 'lucide-react';
+import { CheckCircle2, Truck, PackageCheck, MapPin, Search, FileText, Download } from 'lucide-react';
 import { sampleOrders } from '../../../data/allProductsData';
 import { orderService } from '../../../services/orderService';
+import { invoiceService } from '../../../services/invoiceService';
 import Button from '../../../components/ui/Button';
 
 function OrderDetailPageContent() {
@@ -154,6 +155,21 @@ function OrderDetailPageContent() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Official Atelier Consignment & Invoice Action */}
+          <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+            <span style={{ fontSize: '13px', color: '#888' }}>
+              Official Swiss Certificate & Tax Invoice Available
+            </span>
+            <Button
+              variant="primary"
+              onClick={() => invoiceService.downloadInvoice(displayOrder)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+            >
+              <FileText size={16} />
+              Download Atelier Invoice (PDF)
+            </Button>
           </div>
         </section>
       </div>

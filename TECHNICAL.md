@@ -82,8 +82,8 @@ REVERIE is a luxury Haute Horlogerie e-commerce platform built with a high-perfo
 | `POST` | `/api/cart/items` | Add item to cart | Optional |
 | `POST` | `/api/orders` | Create new purchase order | Optional |
 | `POST` | `/api/payments/intent` | Create Stripe / Razorpay payment intent | Optional |
-| `POST` | `/api/payments/webhook/stripe` | Stripe webhook event handler | Signature verified |
-| `POST` | `/api/payments/webhook/razorpay` | Razorpay webhook event handler | Signature verified |
+| `POST` | `/api/webhooks/payments/{provider}` | Dual-mapped webhook event receiver | Signature verified |
+| `POST` | `/api/v1/payments/webhook` | Standard webhook receiver alias | Signature verified |
 | `GET` | `/api/customers/me/addresses` | List customer shipping addresses | Customer |
 | `POST` | `/api/customers/me/addresses` | Create shipping address | Customer |
 | `GET` | `/api/admin/overview` | Admin executive analytics | Admin |
@@ -101,16 +101,23 @@ REVERIE is a luxury Haute Horlogerie e-commerce platform built with a high-perfo
 
 ---
 
-## 5. Security & Verification Architecture
+## 5. Security, Email & Invoice Architecture
 
 - **Mandatory Email Verification**: Public registrations create unverified accounts requiring single-use 6-digit cryptographic OTP token verification before granting standard access.
+- **Duplicate Account Safeguard & 1-Click Transition**: If an existing email attempts re-registration, a 409 Conflict triggers an Atelier notification card with a 1-click transition to the login flow.
 - **Login Verification Enforcement**: Unverified users attempting credential-based login are rejected with RFC 7807 `FORBIDDEN (EMAIL_UNVERIFIED)` and guided through the verification challenge.
 - **Passwordless / 2FA Email Sign-In**: Dedicated `/api/auth/otp/request` and `/api/auth/otp/verify` endpoints provide passwordless one-time verification authentication.
-- **Brevo & SMTP Transactional Notification Engine**: `EmailService` transmits luxury HTML formatted transactional emails via Brevo API v3 (`https://api.brevo.com/v3/smtp/email` with header `api-key`) and SMTP fallback.
+- **Brevo & SMTP Transactional Notification Engine**: `EmailService` transmits luxury HTML formatted transactional emails via Brevo API v3 (`https://api.brevo.com/v3/smtp/email` with header `api-key`) and SMTP fallback:
+  - Account Verification OTP
+  - Member Sign-In OTP
+  - Password Reset OTP
+  - Welcome to REVERIE Atelier Onboarding Email
+  - Itemized Order Invoice & Consignment Receipt Email
+- **Atelier PDF Invoice Generation (`invoiceService.js`)**: Client-side high-resolution printable PDF invoice generator featuring Swiss horological typography, official watermark, itemized SKUs, VAT breakdown, and a 5-Year Global Warranty certificate.
+- **Webhook Idempotency & Multi-Route Compatibility**: `PaymentWebhookController` handles both `/api/webhooks/payments/{provider}` and `/api/v1/payments/webhook` with HMAC signature validation and append-only database deduplication in `webhook_events`.
 - **Dynamic Runtime Environment Ingestion**: `ReverieApplication.java` ingests `.env` parameters into JVM system properties on startup.
 - **Session Sanitization**: `authService.js` automatically discards and clears unverified accounts, invalid tokens, or stale mock sessions.
 - **No Hardcoded Secrets**: All credentials, JWT keys, and API tokens are resolved via environment variables.
 - **Monetary Precision**: All currency calculations are handled as 64-bit integer paise/cents to avoid floating-point inaccuracies.
-- **Zero Raw OTP Logging**: OTPs are hashed using SHA-256 and never logged in plain text.
 - **Strict CORS**: Origins strictly validated against configured domains in production.
 - **Append-Only Audit Logs**: Every administrative and security-critical action is logged with actor, timestamp, IP, and action metadata.

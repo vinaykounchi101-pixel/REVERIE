@@ -153,10 +153,27 @@
 - **Razorpay Payment Gateway Integration**:
   - Implemented dynamic loading of Razorpay checkout SDK (`checkout.js`) in `reverie-next/app/checkout/page.jsx`.
   - Connected `paymentService.js` with `/api/payments/initiate` and `/api/payments/verify` with HMAC-SHA256 signature verification.
-  - Added dedicated Razorpay payment tab with gold accents, 256-bit SSL trust indicators, and automatic status transition to `CAPTURED`.
-- **Git Branch Consolidation & Cloud Deployment Ready**:
-  - Merged `dev` into `main`, deleted `dev`, and pushed clean tree to `origin/main`.
-  - Configured dynamic port binding `${PORT:${SERVER_PORT:8080}}` for Render deployment and generated comment-free `.env.deployment`.
+### Sprint 16: Registration Flow Hardening, Duplicate User UX, Welcome Email, Atelier PDF Invoice & Order Invoice Email Automation
+- **Registration OTP Verification & Jackson Serialization Fix**:
+  - Resolved `UserDto.java` getter conflict (`isVerified` vs `getVerified`) ensuring seamless Jackson serialization for auth verification responses.
+  - Enhanced `AuthModal.jsx` OTP submission handler to persist JWT credentials, dispatch `reverie_auth_change`, and transition smoothly upon successful verification.
+- **Duplicate Account Detection & 1-Click Sign-In UX**:
+  - Enforced strict 409 `ConflictException` in `AuthService.register()` when an email already exists.
+  - Added an interactive warning card in `AuthModal.jsx` with a 1-click button (*"Sign In to Your Account →"*) switching directly to login with the email prefilled.
+- **Automated Collector Onboarding Welcome Email**:
+  - Implemented `sendWelcomeEmail(toEmail, recipientName)` in `EmailService.java` with a luxury horological HTML email template.
+  - Dispatched automatically upon successful OTP email verification in `AuthService.verifyEmail()`.
+- **Downloadable Atelier Invoice (PDF)**:
+  - Built `reverie-next/services/invoiceService.js` to render high-resolution printable PDF invoices formatted with official Geneva Manufacture header, client consignment details, reference SKUs, Swiss VAT calculations, and a certified 5-Year Horological Warranty seal.
+  - Integrated "Download Atelier Invoice (PDF)" action buttons into:
+    - Order Confirmation Screen (`reverie-next/app/checkout/page.jsx`)
+    - Order Tracking & Receipt Page (`reverie-next/app/orders/[id]/page.jsx`)
+    - Account Acquisition History (`reverie-next/app/account/page.jsx`)
+- **Automated Order Confirmation & Consignment Invoice Email**:
+  - Added `sendOrderInvoiceEmail(...)` to `EmailService.java` with itemized timepiece breakdown table.
+  - Dispatched automatically in `PaymentService.java` upon payment capture.
+- **Payment Webhook Endpoint Flexibility**:
+  - Configured `PaymentWebhookController.java` and `SecurityConfig.java` to support both `/api/webhooks/payments/razorpay` and `/api/v1/payments/webhook` with HMAC-SHA256 signature validation and idempotency.
 
 ---
 
@@ -164,4 +181,5 @@
 - **Backend Tests & Build**: 39/39 passing test suites (`mvn test`) and clean compilation (`mvn compile -DskipTests`).
 - **Frontend Build**: 15/15 static & dynamic routes compiled cleanly with 0 errors (`npm run build`).
 - **Database**: PostgreSQL with Flyway V1 through V7 migrations validated.
+- **Email & Payment**: Brevo REST API v3, SMTP fallbacks, and Razorpay gateway integration verified.
 - **Daemons**: Spring Boot (port 8080), Next.js (port 3000), and PostgreSQL (port 5432) active and fully integrated.

@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/webhooks/payments")
 @Tag(name = "Payment Webhooks", description = "Public webhook receivers for automated asynchronous payment events")
 public class PaymentWebhookController {
 
@@ -19,19 +18,20 @@ public class PaymentWebhookController {
         this.paymentService = paymentService;
     }
 
-    @PostMapping("/{provider}")
+    @PostMapping({"/api/webhooks/payments/{provider}", "/api/webhooks/payments", "/api/v1/payments/webhook", "/api/v1/payments/webhook/{provider}"})
     @Operation(summary = "Receive gateway webhook", description = "Handles asynchronous gateway notifications with HMAC verification and idempotency")
     public ResponseEntity<Map<String, Object>> handleWebhook(
-            @PathVariable String provider,
+            @PathVariable(required = false) String provider,
             @RequestHeader(value = "X-Razorpay-Signature", required = false) String razorpaySignature,
             @RequestHeader(value = "X-Mock-Signature", required = false) String mockSignature,
             @RequestHeader(value = "X-Webhook-Event-ID", required = false) String eventIdHeader,
             @RequestBody String payload) {
 
+        String providerName = (provider != null && !provider.isBlank()) ? provider : "RAZORPAY";
         String signature = razorpaySignature != null ? razorpaySignature : mockSignature;
         String eventId = eventIdHeader != null ? eventIdHeader : "evt_" + System.currentTimeMillis();
 
-        boolean processed = paymentService.processWebhook(provider, eventId, "payment.captured", payload, signature);
+        boolean processed = paymentService.processWebhook(providerName, eventId, "payment.captured", payload, signature);
         if (processed) {
             return ResponseEntity.ok(Map.of("status", "ok", "received", true));
         } else {

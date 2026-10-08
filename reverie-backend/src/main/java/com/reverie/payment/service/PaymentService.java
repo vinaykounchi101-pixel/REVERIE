@@ -38,6 +38,7 @@ public class PaymentService {
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
     private final InventoryService inventoryService;
     private final AuditService auditService;
+    private final com.reverie.auth.service.EmailService emailService;
     private final Map<PaymentProviderType, PaymentProvider> providers;
 
     public PaymentService(
@@ -49,6 +50,7 @@ public class PaymentService {
             OrderStatusHistoryRepository orderStatusHistoryRepository,
             InventoryService inventoryService,
             AuditService auditService,
+            com.reverie.auth.service.EmailService emailService,
             List<PaymentProvider> paymentProviderList) {
         this.paymentRepository = paymentRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
@@ -58,6 +60,7 @@ public class PaymentService {
         this.orderStatusHistoryRepository = orderStatusHistoryRepository;
         this.inventoryService = inventoryService;
         this.auditService = auditService;
+        this.emailService = emailService;
         this.providers = paymentProviderList.stream()
                 .collect(Collectors.toMap(PaymentProvider::getProviderType, p -> p));
     }
@@ -157,6 +160,33 @@ public class PaymentService {
                             userId
                     );
                 }
+            }
+
+            // Transmit official Order Invoice & Consignment Receipt Email
+            try {
+                if (order.getUser() != null && order.getUser().getEmail() != null) {
+                    List<Map<String, Object>> itemMaps = items.stream().map(it -> {
+                        Map<String, Object> map = new java.util.HashMap<>();
+                        map.put("name", it.getNameSnapshot() != null ? it.getNameSnapshot() : "Haute Horlogerie Timepiece");
+                        map.put("sku", it.getSku() != null ? it.getSku() : "R01-CALIBRE");
+                        map.put("quantity", it.getQuantity());
+                        map.put("unitPricePaise", it.getUnitPricePaise());
+                        return map;
+                    }).collect(Collectors.toList());
+
+                    emailService.sendOrderInvoiceEmail(
+                            order.getUser().getEmail(),
+                            order.getUser().getFirstName(),
+                            order.getOrderNumber(),
+                            order.getPayablePaise(),
+                            order.getCurrency() != null ? order.getCurrency() : "USD",
+                            payment.getProvider() != null ? payment.getProvider().name() : "GATEWAY",
+                            order.getAddressSnapshotJson() != null ? "Insured Vault Handover" : "Primary Residence",
+                            itemMaps
+                    );
+                }
+            } catch (Exception ex) {
+                // Log and proceed without blocking capture
             }
 
             auditService.logAction("CUSTOMER", userId, "PAYMENT_CAPTURE", "ORDER", order.getId(), "SUCCESS", "127.0.0.1", null);

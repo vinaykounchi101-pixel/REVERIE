@@ -87,23 +87,7 @@ public class AuthService {
         String clientIp = getClientIp(httpRequest);
         String emailClean = request.getEmail().toLowerCase().trim();
 
-        Optional<User> existingUserOpt = userRepository.findByEmail(emailClean);
-        if (existingUserOpt.isPresent()) {
-            User existingUser = existingUserOpt.get();
-            if (!existingUser.isVerified()) {
-                // User started registration previously but has not yet completed verification.
-                // Update profile info, update password hash, re-issue and dispatch verification OTP.
-                existingUser.setFirstName(request.getFirstName().trim());
-                existingUser.setLastName(request.getLastName().trim());
-                existingUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-                if (request.getPhone() != null && !request.getPhone().isBlank()) {
-                    existingUser.setPhone(request.getPhone().trim());
-                }
-                User savedUser = userRepository.save(existingUser);
-                generateAndSaveOtp(savedUser, savedUser.getEmail(), "EMAIL_VERIFICATION");
-                auditService.logAction("CUSTOMER", savedUser.getId(), "USER_REGISTER_RETRY", "USER", savedUser.getId(), "SUCCESS", clientIp, null);
-                return UserDto.fromEntity(savedUser);
-            }
+        if (userRepository.existsByEmail(emailClean)) {
             throw new ConflictException(ErrorCode.CONFLICT, "An account with this email address already exists. Please sign in.");
         }
 
@@ -345,6 +329,13 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.RESOURCE_NOT_FOUND, "User not found"));
         user.setVerified(true);
         userRepository.save(user);
+
+        // Transmit official Welcome Email to verified collector
+        try {
+            emailService.sendWelcomeEmail(user.getEmail(), user.getFirstName());
+        } catch (Exception ex) {
+            log.warn("Welcome email dispatch failed: {}", ex.getMessage());
+        }
 
         auditService.logAction("CUSTOMER", user.getId(), "EMAIL_VERIFIED", "USER", user.getId(), "SUCCESS", getClientIp(httpRequest), null);
 

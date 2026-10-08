@@ -43,6 +43,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
   const [oauthLoading, setOauthLoading] = useState(false);
   const [error, setError] = useState(null);
   const [suggestRegister, setSuggestRegister] = useState(false);
+  const [alreadyRegisteredEmail, setAlreadyRegisteredEmail] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [countdown, setCountdown] = useState(60);
   const [googleClientId, setGoogleClientId] = useState('');
@@ -53,6 +54,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
     setMode(initialMode);
     setError(null);
     setSuggestRegister(false);
+    setAlreadyRegisteredEmail(null);
     setSuccessMessage(null);
   }, [initialMode, isOpen]);
 
@@ -282,6 +284,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setAlreadyRegisteredEmail(null);
 
     if (!agreedToTerms) {
       setError('Please accept the client terms and conditions to proceed.');
@@ -308,7 +311,13 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
       setCountdown(60);
       setMode('verify-otp');
     } catch (err) {
-      setError(err.message || 'Registration failed.');
+      const msg = err.message || 'Registration failed.';
+      if (msg.includes('already exists') || msg.includes('CONFLICT') || err.status === 409) {
+        setAlreadyRegisteredEmail(email.trim());
+        setError('This email address is already registered in our collector atelier.');
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -329,14 +338,14 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
         const data = await authService.verifyLoginOtp(email, otp);
         setSuccessMessage('Sign-in verified successfully! Welcome back.');
         setTimeout(() => {
-          if (onAuthSuccess) onAuthSuccess(data.user);
+          if (onAuthSuccess) onAuthSuccess(data?.user || data);
           onClose();
         }, 800);
       } else {
         const data = await authService.verifyEmail(email, otp);
         setSuccessMessage('Email verified successfully! Welcome to REVERIE.');
         setTimeout(() => {
-          if (onAuthSuccess) onAuthSuccess(data.user || data);
+          if (onAuthSuccess) onAuthSuccess(data?.user || data);
           onClose();
         }, 800);
       }
@@ -635,6 +644,49 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', onAu
 
         {mode === 'register' && (
           <form onSubmit={handleRegisterSubmit} className="auth-form font-ui">
+            {alreadyRegisteredEmail && (
+              <div className="auth-already-registered-box" style={{
+                background: 'linear-gradient(180deg, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0.04) 100%)',
+                border: '1px solid #d4af37',
+                borderRadius: '8px',
+                padding: '16px',
+                marginBottom: '18px',
+                textAlign: 'center',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <Sparkles size={16} color="#d4af37" />
+                  <strong style={{ color: '#d4af37', fontSize: '14px', letterSpacing: '0.05em' }}>Account Already Registered</strong>
+                </div>
+                <p style={{ fontSize: '13px', color: '#eae7e0', margin: '0 0 14px 0', lineHeight: 1.5 }}>
+                  An active collector profile with <strong>{alreadyRegisteredEmail}</strong> is already registered.
+                </p>
+                <button
+                  type="button"
+                  style={{
+                    width: '100%',
+                    fontSize: '13px',
+                    padding: '10px 18px',
+                    backgroundColor: '#d4af37',
+                    color: '#0b0c10',
+                    fontWeight: 600,
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(212,175,55,0.3)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onClick={() => {
+                    setMode('login');
+                    setError(null);
+                    setAlreadyRegisteredEmail(null);
+                  }}
+                >
+                  Sign In to Your Account →
+                </button>
+              </div>
+            )}
+
             <button
               type="button"
               className="auth-oauth-btn font-ui"

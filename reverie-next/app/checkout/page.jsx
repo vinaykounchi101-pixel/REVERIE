@@ -20,7 +20,9 @@ import {
   Smartphone,
   X,
   AlertCircle,
-  Mail
+  Mail,
+  Download,
+  FileText
 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import { useCart } from '../../context/CartContext';
@@ -28,6 +30,7 @@ import { authService } from '../../services/authService';
 import { customerService } from '../../services/customerService';
 import { orderService } from '../../services/orderService';
 import { paymentService } from '../../services/paymentService';
+import { invoiceService } from '../../services/invoiceService';
 import { WORLD_COUNTRIES } from '../../data/countries';
 
 export default function CheckoutPage() {
@@ -466,9 +469,17 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          <div className="checkout-success-actions" style={{ marginTop: '28px' }}>
-            <Button variant="primary" href="/order-tracking" arrow>
-              Track Insured Dispatch
+          <div className="checkout-success-actions" style={{ marginTop: '28px', display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' }}>
+            <Button 
+              variant="primary" 
+              onClick={() => invoiceService.downloadInvoice(placedOrderDetails)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+            >
+              <FileText size={16} />
+              Download Atelier Invoice (PDF)
+            </Button>
+            <Button variant="secondary" href="/order-tracking" arrow>
+              Track Dispatch
             </Button>
             <Button variant="secondary" href="/">
               Return to Atelier

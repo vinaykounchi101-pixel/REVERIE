@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { User, Package, Heart, MapPin, CreditCard, Settings, HelpCircle, ExternalLink, LogOut, ShieldCheck, Info, Clock, Sparkles, Compass } from 'lucide-react';
+import { User, Package, Heart, MapPin, CreditCard, Settings, HelpCircle, ExternalLink, LogOut, ShieldCheck, Info, Clock, Sparkles, Compass, FileText } from 'lucide-react';
 import { sampleOrders } from '../../data/allProductsData';
 import { authService } from '../../services/authService';
 import { customerService } from '../../services/customerService';
 import { orderService } from '../../services/orderService';
+import { invoiceService } from '../../services/invoiceService';
 import AuthModal from '../../components/auth/AuthModal';
 import Button from '../../components/ui/Button';
 import { useWishlist } from '../../context/WishlistContext';
@@ -297,10 +298,19 @@ export default function AccountPage() {
                           <span className="account-order-total font-display">
                             Total: <strong>${(ord.total || ord.totalAmountPaise ? (ord.total || (ord.totalAmountPaise / 100)) : 1299).toLocaleString()}</strong>
                           </span>
-                          <div className="account-order-actions">
+                          <div className="account-order-actions" style={{ display: 'flex', gap: '8px' }}>
+                            <Button 
+                              variant="secondary" 
+                              className="account-track-btn"
+                              onClick={() => invoiceService.downloadInvoice(ord)}
+                              title="Download official Atelier PDF invoice"
+                            >
+                              <FileText size={13} />
+                              <span>Invoice</span>
+                            </Button>
                             <Link href={`/order-tracking?id=${ord.orderId || ord.orderNumber || ord.id}`}>
                               <Button variant="secondary" className="account-track-btn">
-                                <span>Track Shipment</span>
+                                <span>Track</span>
                                 <ExternalLink size={13} />
                               </Button>
                             </Link>
