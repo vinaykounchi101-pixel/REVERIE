@@ -66,7 +66,7 @@ public class Product {
     @Column(name = "model_3d_url")
     private String model3dUrl;
 
-    @Column(name = "primary_image_url")
+    @Column(name = "primary_image_url", columnDefinition = "TEXT")
     private String primaryImageUrl;
 
     @Column(precision = 3, scale = 2)

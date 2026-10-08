@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../DataTable';
+import AdminModal from '../AdminModal';
 import { adminAuditService } from '../../../services/admin/adminServices';
 import { ShieldAlert, ShieldCheck, Lock, Activity, Eye } from 'lucide-react';
 
@@ -12,7 +13,7 @@ export default function AuditView() {
     setLoading(true);
     try {
       const data = await adminAuditService.getAuditLogs(query, 0, 50);
-      const list = data.content || (Array.isArray(data) ? data : []);
+      const list = data?.content || (Array.isArray(data) ? data : []);
       setLogs(list);
     } catch (err) {
       console.error('Failed to load audit logs:', err);
@@ -31,7 +32,7 @@ export default function AuditView() {
       label: 'Timestamp (CET)',
       sortable: true,
       render: (val) => (
-        <span className="font-mono text-xs text-stone-500">
+        <span style={{ fontSize: 12, color: '#64748B' }}>
           {val ? new Date(val).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'medium' }) : 'Just now'}
         </span>
       ),
@@ -41,7 +42,7 @@ export default function AuditView() {
       label: 'Security Action',
       sortable: true,
       render: (val) => (
-        <span className="font-mono text-xs font-semibold text-[#0F172A] bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 600, color: '#0F172A', backgroundColor: '#F1F5F9', padding: '3px 8px', borderRadius: 6, border: '1px solid #E2E8F0' }}>
           {val || 'SYSTEM_MUTATION'}
         </span>
       ),
@@ -52,8 +53,8 @@ export default function AuditView() {
       sortable: true,
       render: (val, row) => (
         <div>
-          <p className="font-mono text-xs font-medium text-stone-900">{val || 'system@reverie.ch'}</p>
-          <p className="font-mono text-[10px] text-stone-400">IP: {row.actorIp || '127.0.0.1 (Zurich Gateway)'}</p>
+          <p style={{ fontSize: 12, fontWeight: 600, color: '#0F172A', margin: 0 }}>{val || 'system@reverie.ch'}</p>
+          <p style={{ fontSize: 10, color: '#94A3B8', margin: '2px 0 0 0' }}>IP: {row.actorIp || '127.0.0.1 (Zurich Gateway)'}</p>
         </div>
       ),
     },
@@ -61,15 +62,15 @@ export default function AuditView() {
       key: 'entityType',
       label: 'Target Entity',
       render: (val, row) => (
-        <span className="font-mono text-xs text-stone-600">
-          {val}: <span className="text-stone-400 text-[11px]">#{row.entityId || '0'}</span>
+        <span style={{ fontSize: 12, color: '#334155' }}>
+          {val}: <span style={{ color: '#94A3B8', fontSize: 11 }}>#{row.entityId || '0'}</span>
         </span>
       ),
     },
     {
       key: 'details',
       label: 'Security Context',
-      render: (val) => <span className="font-mono text-xs text-stone-500 truncate max-w-xs block">{val || '—'}</span>,
+      render: (val) => <span style={{ fontSize: 12, color: '#64748B', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{val || '—'}</span>,
     },
     {
       key: 'actions',
@@ -77,34 +78,57 @@ export default function AuditView() {
       render: (_, row) => (
         <button
           onClick={() => setSelectedLog(row)}
-          className="p-1.5 rounded-lg border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition"
+          style={{
+            padding: 6,
+            borderRadius: 8,
+            border: '1px solid #E2E8F0',
+            backgroundColor: '#FFFFFF',
+            color: '#334155',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
           title="Inspect Payload"
         >
-          <Eye className="w-3.5 h-3.5 text-[#D4AF37]" />
+          <Eye style={{ width: 14, height: 14, color: '#D4AF37' }} />
         </button>
       ),
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Security Header Banner */}
-      <div className="p-5 rounded-2xl bg-gradient-to-br from-[#0F172A] to-[#1E293B] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-stone-800 shadow-sm">
+      <div
+        style={{
+          padding: '20px 24px',
+          borderRadius: 16,
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+          color: '#FFFFFF',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+          boxShadow: '0 4px 20px rgba(15, 23, 42, 0.15)',
+        }}
+      >
         <div>
-          <span className="text-[10px] font-mono tracking-widest text-[#D4AF37] uppercase font-bold flex items-center gap-1.5">
-            <Lock className="w-3 h-3" />
-            Immutable Cryptographic Audit Trail
+          <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', letterSpacing: '0.15em', color: '#D4AF37', textTransform: 'uppercase', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Lock style={{ width: 12, height: 12 }} />
+            IMMUTABLE CRYPTOGRAPHIC AUDIT TRAIL
           </span>
-          <h2 className="font-serif text-lg text-white font-medium mt-1">
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: '#FFFFFF', fontWeight: 600, margin: '6px 0 2px 0' }}>
             Atelier Governance & Mutation Records
           </h2>
-          <p className="text-xs font-mono text-stone-400 mt-0.5">
+          <p style={{ fontSize: 12, color: '#94A3B8', margin: 0 }}>
             Every inventory adjustment, order status transition, refund authorization and staff login is permanently recorded.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 bg-emerald-950/50 px-3 py-1.5 rounded-xl border border-emerald-800/60">
-          <ShieldCheck className="w-4 h-4" />
-          <span>Tamper-Resistant</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: '#34D399', backgroundColor: 'rgba(6, 78, 59, 0.4)', padding: '6px 14px', borderRadius: 10, border: '1px solid rgba(5, 150, 105, 0.5)' }}>
+          <ShieldCheck style={{ width: 16, height: 16 }} />
+          <span>Tamper-Resistant Ledger</span>
         </div>
       </div>
 
@@ -117,50 +141,40 @@ export default function AuditView() {
       />
 
       {/* Detail Modal */}
-      {selectedLog && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full border border-stone-200 shadow-2xl p-6 space-y-4">
-            <div className="flex items-start justify-between border-b border-stone-100 pb-3">
-              <div>
-                <span className="text-[10px] font-mono tracking-widest text-[#D4AF37] uppercase font-bold">
-                  Audit Entry Telemetry
-                </span>
-                <h3 className="font-serif text-xl text-[#0F172A] font-medium mt-0.5">
-                  Action: {selectedLog.action}
-                </h3>
-              </div>
-              <button
-                onClick={() => setSelectedLog(null)}
-                className="text-stone-400 hover:text-stone-700 text-lg leading-none"
-              >
-                &times;
-              </button>
-            </div>
-
-            <div className="p-4 rounded-xl bg-[#FAF9F6] border border-stone-200 text-xs font-mono space-y-2">
-              <p><span className="text-stone-400">Timestamp:</span> {selectedLog.occurredAt}</p>
-              <p><span className="text-stone-400">Actor Principal:</span> {selectedLog.actorEmail}</p>
-              <p><span className="text-stone-400">Client IP:</span> {selectedLog.actorIp}</p>
-              <p><span className="text-stone-400">Entity:</span> {selectedLog.entityType} (#{selectedLog.entityId})</p>
-              <div className="pt-2 border-t border-stone-200">
-                <span className="text-stone-400 block mb-1">Details Payload:</span>
-                <p className="bg-white p-2.5 rounded-lg border border-stone-200 text-stone-800 break-words">
+      <AdminModal
+        isOpen={!!selectedLog}
+        onClose={() => setSelectedLog(null)}
+        subtitle="AUDIT ENTRY TELEMETRY"
+        title={selectedLog ? `Action: ${selectedLog.action}` : ''}
+        maxWidth="max-w-lg"
+      >
+        {selectedLog && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ padding: 16, borderRadius: 12, backgroundColor: '#FAF9F6', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
+              <p style={{ margin: 0 }}><span style={{ color: '#94A3B8' }}>Timestamp:</span> <strong>{selectedLog.occurredAt}</strong></p>
+              <p style={{ margin: 0 }}><span style={{ color: '#94A3B8' }}>Actor Principal:</span> <strong>{selectedLog.actorEmail}</strong></p>
+              <p style={{ margin: 0 }}><span style={{ color: '#94A3B8' }}>Client IP:</span> <strong>{selectedLog.actorIp}</strong></p>
+              <p style={{ margin: 0 }}><span style={{ color: '#94A3B8' }}>Entity:</span> <strong>{selectedLog.entityType} (#{selectedLog.entityId})</strong></p>
+              <div style={{ paddingTop: 8, borderTop: '1px solid #E2E8F0' }}>
+                <span style={{ color: '#94A3B8', display: 'block', marginBottom: 4 }}>Details Payload:</span>
+                <p style={{ backgroundColor: '#FFFFFF', padding: 10, borderRadius: 8, border: '1px solid #E2E8F0', color: '#1E293B', margin: 0, wordBreak: 'break-word' }}>
                   {selectedLog.details || 'Standard administrative operation'}
                 </p>
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end">
+            <div className="admin-modal-footer">
               <button
+                type="button"
                 onClick={() => setSelectedLog(null)}
-                className="px-4 py-2 rounded-xl text-xs font-mono bg-[#0F172A] text-white hover:bg-black transition"
+                className="admin-btn-primary"
               >
                 Dismiss
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </AdminModal>
     </div>
   );
 }

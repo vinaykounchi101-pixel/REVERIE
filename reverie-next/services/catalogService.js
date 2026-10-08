@@ -4,7 +4,13 @@
  */
 
 import { apiRequest } from './apiClient';
-import { allWatchCatalog, allCollectionsData } from '../data/allProductsData';
+import { allWatchCatalog } from '../data/allProductsData';
+
+const DEFAULT_COLLECTIONS = [
+  { id: 'heritage', name: 'Grande Complication', description: 'Master mechanical movements with astronomical precision' },
+  { id: 'sport', name: 'Nautilus & Seafarer', description: 'Engineered grade 5 titanium luxury diving chronometers' },
+  { id: 'celestial', name: 'Astronomia & Squelette', description: 'Openworked tourbillons with celestial sky charts' },
+];
 
 export const catalogService = {
   /**
@@ -58,6 +64,6 @@ export const catalogService = {
     } catch (err) {
       // Fallback
     }
-    return allCollectionsData;
+    return DEFAULT_COLLECTIONS;
   },
 };

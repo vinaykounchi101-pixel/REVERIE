@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../DataTable';
+import AdminModal from '../AdminModal';
 import { adminCmsService } from '../../../services/admin/adminServices';
-import { HelpCircle, Plus, Trash2, Edit3, CheckCircle } from 'lucide-react';
+import { HelpCircle, Plus, Trash2, Edit3, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function FaqsView() {
   const [faqs, setFaqs] = useState([]);
@@ -75,8 +76,10 @@ export default function FaqsView() {
       sortable: true,
       render: (val, row) => (
         <div>
-          <p className="font-medium text-stone-900 text-xs">{val}</p>
-          <p className="text-xs text-stone-500 italic max-w-lg truncate mt-0.5">{row.answer}</p>
+          <p style={{ fontWeight: 600, color: '#0F172A', fontSize: 13, margin: 0 }}>{val}</p>
+          <p style={{ fontSize: 12, color: '#64748B', fontStyle: 'italic', margin: '4px 0 0 0', maxWidth: 480, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {row.answer}
+          </p>
         </div>
       ),
     },
@@ -85,7 +88,7 @@ export default function FaqsView() {
       label: 'Knowledge Domain',
       sortable: true,
       render: (val) => (
-        <span className="font-mono text-xs text-stone-700 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
+        <span style={{ fontSize: 11, fontWeight: 500, color: '#334155', backgroundColor: '#F1F5F9', padding: '3px 8px', borderRadius: 6, border: '1px solid #E2E8F0' }}>
           {val || 'General'}
         </span>
       ),
@@ -94,7 +97,7 @@ export default function FaqsView() {
       key: 'displayOrder',
       label: 'Sort Order',
       sortable: true,
-      render: (val) => <span className="font-mono text-xs text-stone-500">#{val || 1}</span>,
+      render: (val) => <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#64748B' }}>#{val || 1}</span>,
     },
     {
       key: 'actions',
@@ -102,40 +105,41 @@ export default function FaqsView() {
       render: (_, row) => (
         <button
           onClick={() => handleDeleteFaq(row.id)}
-          className="p-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition"
+          style={{
+            padding: 6,
+            borderRadius: 8,
+            border: '1px solid #FECDD3',
+            backgroundColor: '#FFF1F2',
+            color: '#BE123C',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
           title="Delete FAQ"
         >
-          <Trash2 className="w-3.5 h-3.5" />
+          <Trash2 style={{ width: 14, height: 14 }} />
         </button>
       ),
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {notice && (
-        <div className={`p-4 rounded-xl text-xs font-mono border ${
-          notice.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'
-        }`}>
-          {notice.message}
+        <div
+          className={`admin-notice ${
+            notice.type === 'success' ? 'admin-notice-success' : 'admin-notice-error'
+          }`}
+        >
+          {notice.type === 'success' ? (
+            <CheckCircle2 style={{ width: 16, height: 16 }} />
+          ) : (
+            <AlertCircle style={{ width: 16, height: 16 }} />
+          )}
+          <span>{notice.message}</span>
         </div>
       )}
-
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-white border border-stone-200">
-        <div>
-          <h2 className="font-serif text-lg text-[#0F172A] font-medium">Atelier Knowledge Base & FAQs</h2>
-          <p className="text-xs font-mono text-stone-500 mt-0.5">
-            Collector documentation, escrow terms, provenance certificates & warranty guides
-          </p>
-        </div>
-        <button
-          onClick={() => setModalOpen(true)}
-          className="px-3.5 py-2 rounded-xl bg-[#0F172A] text-white hover:bg-black text-xs font-mono font-medium flex items-center gap-2 shadow-sm transition"
-        >
-          <Plus className="w-3.5 h-3.5 text-[#D4AF37]" />
-          <span>Add Knowledge Entry</span>
-        </button>
-      </div>
 
       <DataTable
         columns={columns}
@@ -143,101 +147,106 @@ export default function FaqsView() {
         loading={loading}
         searchPlaceholder="Search knowledge base questions..."
         emptyMessage="No FAQ entries documented."
+        actions={
+          <button
+            onClick={() => setModalOpen(true)}
+            className="admin-btn-primary"
+            style={{
+              backgroundColor: '#060B14',
+              border: '1px solid #1E293B',
+            }}
+          >
+            <Plus style={{ width: 14, height: 14, color: '#D4AF37' }} />
+            <span>Add Knowledge Entry</span>
+          </button>
+        }
       />
 
       {/* Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <form onSubmit={handleSaveFaq} className="bg-white rounded-2xl max-w-lg w-full border border-stone-200 shadow-2xl p-6 space-y-4">
-            <div className="flex items-start justify-between border-b border-stone-100 pb-3">
-              <div>
-                <span className="text-[10px] font-mono tracking-widest text-[#D4AF37] uppercase font-bold">
-                  Knowledge Base Entry
-                </span>
-                <h3 className="font-serif text-xl text-[#0F172A] font-medium mt-0.5">
-                  Publish Question & Protocol
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
-                className="text-stone-400 hover:text-stone-700 text-lg leading-none"
+      <AdminModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        subtitle="KNOWLEDGE BASE ENTRY"
+        title="Publish Question & Protocol"
+        maxWidth="max-w-lg"
+      >
+        <form onSubmit={handleSaveFaq} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+              Inquiry / Question Title *
+            </label>
+            <input
+              type="text"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="e.g. How does REVERIE verify timepiece authenticity?"
+              className="admin-form-input"
+              required
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+                Knowledge Category
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="admin-form-select"
               >
-                &times;
-              </button>
+                <option value="Acquisitions & Ordering">Acquisitions & Ordering</option>
+                <option value="Armored Transit & Delivery">Armored Transit & Delivery</option>
+                <option value="Escrow & Payment Rails">Escrow & Payment Rails</option>
+                <option value="Atelier Care & Servicing">Atelier Care & Servicing</option>
+                <option value="Provenance & Blockchain">Provenance & Blockchain</option>
+              </select>
             </div>
-
-            <div className="space-y-3 text-xs font-mono">
-              <div>
-                <label className="block text-stone-600 mb-1">Inquiry / Question Title</label>
-                <input
-                  type="text"
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="e.g. How does REVERIE verify timepiece authenticity?"
-                  className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A]"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-stone-600 mb-1">Knowledge Category</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A]"
-                  >
-                    <option value="Acquisitions & Ordering">Acquisitions & Ordering</option>
-                    <option value="Armored Transit & Delivery">Armored Transit & Delivery</option>
-                    <option value="Escrow & Payment Rails">Escrow & Payment Rails</option>
-                    <option value="Atelier Care & Servicing">Atelier Care & Servicing</option>
-                    <option value="Provenance & Blockchain">Provenance & Blockchain</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-stone-600 mb-1">Display Priority Order</label>
-                  <input
-                    type="number"
-                    value={displayOrder}
-                    onChange={(e) => setDisplayOrder(e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-stone-600 mb-1">Authoritative Answer / Protocol</label>
-                <textarea
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  rows={4}
-                  placeholder="Provide precise horological explanation..."
-                  className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A]"
-                  required
-                />
-              </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+                Priority Order
+              </label>
+              <input
+                type="number"
+                value={displayOrder}
+                onChange={(e) => setDisplayOrder(e.target.value)}
+                className="admin-form-input"
+              />
             </div>
+          </div>
 
-            <div className="pt-3 border-t border-stone-100 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-mono text-stone-600 hover:bg-stone-100 transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={actionLoading}
-                className="px-5 py-2 rounded-xl text-xs font-mono bg-[#0F172A] text-white hover:bg-black transition disabled:opacity-50"
-              >
-                {actionLoading ? 'Saving...' : 'Publish Entry'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+              Authoritative Answer / Protocol *
+            </label>
+            <textarea
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              rows={4}
+              placeholder="Provide precise horological explanation..."
+              className="admin-form-textarea"
+              required
+            />
+          </div>
+
+          <div className="admin-modal-footer">
+            <button
+              type="button"
+              onClick={() => setModalOpen(false)}
+              className="admin-btn-secondary"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={actionLoading}
+              className="admin-btn-primary"
+            >
+              {actionLoading ? 'Saving...' : 'Publish Entry'}
+            </button>
+          </div>
+        </form>
+      </AdminModal>
     </div>
   );
 }

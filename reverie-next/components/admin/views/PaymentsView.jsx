@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../DataTable';
 import StatusBadge from '../StatusBadge';
+import AdminModal from '../AdminModal';
 import { adminPaymentService, adminOrderService } from '../../../services/admin/adminServices';
-import { CreditCard, DollarSign, RotateCcw, ShieldCheck, Lock, ExternalLink } from 'lucide-react';
+import { CreditCard, DollarSign, RotateCcw, ShieldCheck, Lock, ExternalLink, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function PaymentsView() {
   const [payments, setPayments] = useState([]);
@@ -16,10 +17,10 @@ export default function PaymentsView() {
   const fetchPayments = async () => {
     setLoading(true);
     try {
-      // Derive transactions from orders & payments
       const orders = await adminOrderService.getOrders();
-      if (Array.isArray(orders)) {
-        const txs = orders.map((o) => ({
+      const list = orders?.content || (Array.isArray(orders) ? orders : []);
+      if (Array.isArray(list)) {
+        const txs = list.map((o) => ({
           id: `TXN-${o.id?.substring(0, 8)}`,
           paymentId: o.paymentId || o.id,
           orderId: o.id,
@@ -66,13 +67,13 @@ export default function PaymentsView() {
       key: 'id',
       label: 'Transaction ID',
       sortable: true,
-      render: (val) => <span className="font-mono text-xs font-semibold text-[#0F172A]">{val}</span>,
+      render: (val) => <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, color: '#0F172A' }}>{val}</span>,
     },
     {
       key: 'orderNumber',
       label: 'Commission #',
       render: (val, row) => (
-        <span className="font-mono text-xs text-stone-600">
+        <span style={{ fontSize: 12, color: '#64748B' }}>
           #{val || row.orderId?.substring(0, 8)}
         </span>
       ),
@@ -81,12 +82,12 @@ export default function PaymentsView() {
       key: 'patron',
       label: 'Patron Account',
       sortable: true,
-      render: (val) => <span className="text-xs font-medium text-stone-900">{val}</span>,
+      render: (val) => <span style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>{val}</span>,
     },
     {
       key: 'method',
       label: 'Settlement Rail',
-      render: (val) => <span className="font-mono text-[11px] text-stone-500">{val}</span>,
+      render: (val) => <span style={{ fontSize: 11, color: '#64748B' }}>{val}</span>,
     },
     {
       key: 'amountPaise',
@@ -94,7 +95,7 @@ export default function PaymentsView() {
       sortable: true,
       render: (val) => {
         const amt = (val || 0) / 100;
-        return <span className="font-mono font-semibold text-[#0F172A]">${amt.toLocaleString()}</span>;
+        return <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: '#0F172A' }}>${amt.toLocaleString()}</span>;
       },
     },
     {
@@ -113,13 +114,25 @@ export default function PaymentsView() {
               setRefundModal(row);
               setRefundAmount(((row.amountPaise || 0) / 100).toString());
             }}
-            className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-[10px] font-mono font-semibold transition flex items-center gap-1"
+            style={{
+              padding: '4px 10px',
+              borderRadius: 8,
+              backgroundColor: '#FFF1F2',
+              border: '1px solid #FECDD3',
+              fontSize: 11,
+              fontWeight: 600,
+              color: '#BE123C',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
           >
-            <RotateCcw className="w-3 h-3 text-stone-500" />
+            <RotateCcw style={{ width: 12, height: 12 }} />
             <span>Issue Refund</span>
           </button>
         ) : (
-          <span className="text-[10px] font-mono text-stone-400">Settled & Closed</span>
+          <span style={{ fontSize: 11, color: '#94A3B8' }}>Settled & Closed</span>
         )
       ),
     },
@@ -130,33 +143,70 @@ export default function PaymentsView() {
     .reduce((sum, p) => sum + (p.amountPaise || 0), 0) / 100;
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {notice && (
-        <div className={`p-4 rounded-xl text-xs font-mono border ${
-          notice.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'
-        }`}>
-          {notice.message}
+        <div
+          className={`admin-notice ${
+            notice.type === 'success' ? 'admin-notice-success' : 'admin-notice-error'
+          }`}
+        >
+          {notice.type === 'success' ? (
+            <CheckCircle2 style={{ width: 16, height: 16 }} />
+          ) : (
+            <AlertCircle style={{ width: 16, height: 16 }} />
+          )}
+          <span>{notice.message}</span>
         </div>
       )}
 
       {/* Escrow summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-xl bg-white border border-stone-200 shadow-sm">
-          <span className="text-[10px] font-mono uppercase text-stone-400">Total Settled Escrow</span>
-          <p className="font-serif text-2xl text-[#0F172A] mt-1 font-medium">
-            ${totalCaptured.toLocaleString()}
-          </p>
+      <div className="admin-metric-grid">
+        <div className="admin-metric-card gold-accent">
+          <div className="admin-metric-top">
+            <div>
+              <span className="admin-metric-title">Total Settled Escrow</span>
+              <h3 className="admin-metric-value">${totalCaptured.toLocaleString()}</h3>
+            </div>
+            <div className="admin-metric-icon-box">
+              <DollarSign style={{ width: 20, height: 20 }} />
+            </div>
+          </div>
+          <div className="admin-metric-footer">
+            <span style={{ color: '#047857', fontWeight: 600 }}>100% Capital Verified</span>
+            <span style={{ color: '#64748B' }}>USD Vault</span>
+          </div>
         </div>
-        <div className="p-4 rounded-xl bg-white border border-stone-200 shadow-sm">
-          <span className="text-[10px] font-mono uppercase text-stone-400">Escrow Security</span>
-          <p className="font-mono text-xs text-emerald-600 mt-2 font-semibold flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4" />
-            Swiss Banking Standard / 256-bit Encrypted
-          </p>
+
+        <div className="admin-metric-card">
+          <div className="admin-metric-top">
+            <div>
+              <span className="admin-metric-title">Escrow Security Rail</span>
+              <h3 className="admin-metric-value" style={{ fontSize: 20, marginTop: 8 }}>Swiss Standard</h3>
+            </div>
+            <div className="admin-metric-icon-box">
+              <ShieldCheck style={{ width: 20, height: 20 }} />
+            </div>
+          </div>
+          <div className="admin-metric-footer">
+            <span style={{ color: '#64748B' }}>256-bit Hardware SSL</span>
+            <span style={{ color: '#047857', fontWeight: 600 }}>Active</span>
+          </div>
         </div>
-        <div className="p-4 rounded-xl bg-white border border-stone-200 shadow-sm">
-          <span className="text-[10px] font-mono uppercase text-stone-400">Settlement Currency</span>
-          <p className="font-serif text-2xl text-[#0F172A] mt-1 font-medium">USD / CHF</p>
+
+        <div className="admin-metric-card">
+          <div className="admin-metric-top">
+            <div>
+              <span className="admin-metric-title">Settlement Currency</span>
+              <h3 className="admin-metric-value">USD / CHF</h3>
+            </div>
+            <div className="admin-metric-icon-box">
+              <CreditCard style={{ width: 20, height: 20 }} />
+            </div>
+          </div>
+          <div className="admin-metric-footer">
+            <span style={{ color: '#64748B' }}>Multi-currency Gateway</span>
+            <span style={{ color: '#D4AF37', fontWeight: 600 }}>Geneva Clearing</span>
+          </div>
         </div>
       </div>
 
@@ -169,75 +219,61 @@ export default function PaymentsView() {
       />
 
       {/* Refund Modal */}
-      {refundModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <form onSubmit={handleRefund} className="bg-white rounded-2xl max-w-md w-full border border-stone-200 shadow-2xl p-6 space-y-5">
-            <div className="flex items-start justify-between border-b border-stone-100 pb-3">
-              <div>
-                <span className="text-[10px] font-mono tracking-widest text-[#D4AF37] uppercase font-bold">
-                  Payment Refund Authorization
-                </span>
-                <h3 className="font-serif text-xl text-[#0F172A] font-medium mt-0.5">
-                  Refund {refundModal.id}
-                </h3>
-              </div>
+      <AdminModal
+        isOpen={!!refundModal}
+        onClose={() => setRefundModal(null)}
+        subtitle="ESCROW REVERSAL PROTOCOL"
+        title={refundModal ? `Refund ${refundModal.id}` : ''}
+        maxWidth="max-w-md"
+      >
+        {refundModal && (
+          <form onSubmit={handleRefund} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+                Refund Amount ($ USD)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={refundAmount}
+                onChange={(e) => setRefundAmount(e.target.value)}
+                className="admin-form-input"
+                required
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+                Reason for Refund (Recorded in immutable audit trail)
+              </label>
+              <textarea
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                rows={3}
+                className="admin-form-textarea"
+                required
+              />
+            </div>
+
+            <div className="admin-modal-footer">
               <button
                 type="button"
                 onClick={() => setRefundModal(null)}
-                className="text-stone-400 hover:text-stone-700 text-lg leading-none"
-              >
-                &times;
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-mono text-stone-600 mb-1">
-                  Refund Amount (USD)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={refundAmount}
-                  onChange={(e) => setRefundAmount(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A] font-mono font-semibold"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-mono text-stone-600 mb-1">
-                  Reason for Refund (Will be recorded in immutable audit log)
-                </label>
-                <textarea
-                  value={refundReason}
-                  onChange={(e) => setRefundReason(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A] font-mono"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-stone-100 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setRefundModal(null)}
-                className="px-4 py-2 rounded-xl text-xs font-mono text-stone-600 hover:bg-stone-100 transition"
+                className="admin-btn-secondary"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={actionLoading}
-                className="px-4 py-2 rounded-xl text-xs font-mono bg-rose-600 text-white hover:bg-rose-700 transition disabled:opacity-50"
+                className="admin-btn-danger"
               >
                 {actionLoading ? 'Processing Refund...' : 'Authorize Refund'}
               </button>
             </div>
           </form>
-        </div>
-      )}
+        )}
+      </AdminModal>
     </div>
   );
 }

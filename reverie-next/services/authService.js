@@ -121,6 +121,26 @@ export const authService = {
     return json.data;
   },
 
+  // Atelier Executive Admin Login
+  async adminLogin(email, password) {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), password }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      const err = new Error(json.message || 'Invalid administrator credentials.');
+      err.status = res.status;
+      err.code = json.code || 'AUTH_FAILED';
+      throw err;
+    }
+
+    this.setAuthSession(json.data);
+    return json.data;
+  },
+
   // OAuth / Social Sign-In (Google etc.) — Auto registers if account not found
   async oauthLogin({ email, firstName, lastName, provider = 'GOOGLE', providerId, avatarUrl }) {
     const res = await fetch(`${API_BASE}/auth/oauth`, {

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../DataTable';
 import StatusBadge from '../StatusBadge';
+import AdminModal from '../AdminModal';
 import { adminShipmentService, adminOrderService } from '../../../services/admin/adminServices';
-import { Truck, ShieldCheck, MapPin, Eye, ExternalLink, Plus } from 'lucide-react';
+import { Truck, ShieldCheck, MapPin, Eye, ExternalLink, Plus, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function ShipmentsView() {
   const [shipments, setShipments] = useState([]);
@@ -102,8 +103,8 @@ export default function ShipmentsView() {
       label: 'Armored Waybill (AWB)',
       sortable: true,
       render: (val, row) => (
-        <span className="font-mono text-xs font-semibold text-[#0F172A] flex items-center gap-1.5">
-          <Truck className="w-3.5 h-3.5 text-[#D4AF37]" />
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Truck style={{ width: 14, height: 14, color: '#D4AF37' }} />
           {val || row.awbNumber || `AWB-${row.id?.substring(0, 8)}`}
         </span>
       ),
@@ -111,14 +112,14 @@ export default function ShipmentsView() {
     {
       key: 'courierName',
       label: 'Secure Carrier Rail',
-      render: (val, row) => <span className="font-mono text-xs text-stone-700">{val || row.carrier || 'Ferrari Group Armored'}</span>,
+      render: (val, row) => <span style={{ fontSize: 12, color: '#334155' }}>{val || row.carrier || 'Ferrari Group Armored'}</span>,
     },
     {
       key: 'currentLocation',
       label: 'Last Verified Checkpoint',
       render: (val) => (
-        <span className="text-xs text-stone-600 flex items-center gap-1">
-          <MapPin className="w-3 h-3 text-stone-400" />
+        <span style={{ fontSize: 12, color: '#475569', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <MapPin style={{ width: 12, height: 12, color: '#94A3B8' }} />
           {val || 'Geneva Vault Bonded Hub'}
         </span>
       ),
@@ -133,52 +134,81 @@ export default function ShipmentsView() {
       key: 'actions',
       label: 'Actions',
       render: (_, row) => (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              setUpdateModal(row);
-              setNewStatus(row.status === 'PENDING' ? 'IN_TRANSIT' : 'DELIVERED');
-              setNewLocation('Frankfurt Customs Secure Transit Hub');
-              setEventDesc('Biometric package scan verified by courier lead.');
-            }}
-            className="px-2.5 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-mono font-semibold transition"
-          >
-            Log Checkpoint
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            setUpdateModal(row);
+            setNewStatus(row.status === 'PENDING' ? 'IN_TRANSIT' : 'DELIVERED');
+            setNewLocation('Frankfurt Customs Secure Transit Hub');
+            setEventDesc('Biometric package scan verified by courier lead.');
+          }}
+          style={{
+            padding: '5px 12px',
+            borderRadius: 8,
+            backgroundColor: '#F1F5F9',
+            border: '1px solid #E2E8F0',
+            fontSize: 11,
+            fontWeight: 600,
+            color: '#334155',
+            cursor: 'pointer',
+          }}
+        >
+          Log Checkpoint
+        </button>
       ),
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {notice && (
-        <div className={`p-4 rounded-xl text-xs font-mono border ${
-          notice.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'
-        }`}>
-          {notice.message}
+        <div
+          className={`admin-notice ${
+            notice.type === 'success' ? 'admin-notice-success' : 'admin-notice-error'
+          }`}
+        >
+          {notice.type === 'success' ? (
+            <CheckCircle2 style={{ width: 16, height: 16 }} />
+          ) : (
+            <AlertCircle style={{ width: 16, height: 16 }} />
+          )}
+          <span>{notice.message}</span>
         </div>
       )}
 
       {/* Armored Logistics Status Header */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-stone-900 via-[#0F172A] to-stone-900 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div
+        style={{
+          padding: '20px 24px',
+          borderRadius: 16,
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+          color: '#FFFFFF',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+          boxShadow: '0 4px 20px rgba(15, 23, 42, 0.15)',
+        }}
+      >
         <div>
-          <span className="text-[10px] font-mono tracking-widest text-[#D4AF37] uppercase font-bold">
-            Haute Horlogerie Global Armored Logistics
+          <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', letterSpacing: '0.15em', color: '#D4AF37', textTransform: 'uppercase', fontWeight: 700 }}>
+            HAUTE HORLOGERIE GLOBAL ARMORED LOGISTICS
           </span>
-          <p className="text-xs text-stone-300 font-mono mt-1">
+          <p style={{ fontSize: 12, color: '#94A3B8', margin: '4px 0 0 0' }}>
             All timepieces ship fully insured with armored escort & biometric customs clearance.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setCreateModal(true)}
-            className="px-3.5 py-2 rounded-xl bg-white text-[#0F172A] hover:bg-stone-100 text-xs font-mono font-semibold flex items-center gap-2 shadow-sm transition"
-          >
-            <Plus className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>Dispatch New Shipment</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setCreateModal(true)}
+          className="admin-btn-primary"
+          style={{
+            backgroundColor: '#FFFFFF',
+            color: '#0F172A',
+          }}
+        >
+          <Plus style={{ width: 14, height: 14, color: '#D4AF37' }} />
+          <span>Dispatch New Shipment</span>
+        </button>
       </div>
 
       <DataTable
@@ -190,180 +220,156 @@ export default function ShipmentsView() {
       />
 
       {/* Dispatch Shipment Modal */}
-      {createModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <form onSubmit={handleCreateShipment} className="bg-white rounded-2xl max-w-md w-full border border-stone-200 shadow-2xl p-6 space-y-4">
-            <div className="flex items-start justify-between border-b border-stone-100 pb-3">
-              <div>
-                <span className="text-[10px] font-mono tracking-widest text-[#D4AF37] uppercase font-bold">
-                  Armored Dispatch Generation
-                </span>
-                <h3 className="font-serif text-xl text-[#0F172A] font-medium mt-0.5">
-                  Authorize Secure Courier
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setCreateModal(false)}
-                className="text-stone-400 hover:text-stone-700 text-lg leading-none"
+      <AdminModal
+        isOpen={createModal}
+        onClose={() => setCreateModal(false)}
+        subtitle="ARMORED DISPATCH GENERATION"
+        title="Authorize Secure Courier"
+        maxWidth="max-w-md"
+      >
+        <form onSubmit={handleCreateShipment} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+              Target Order Commission
+            </label>
+            {orders.length === 0 ? (
+              <p style={{ padding: 12, backgroundColor: '#FAF9F6', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 12, color: '#64748B', margin: 0 }}>
+                No active orders found. Place an order on the storefront first.
+              </p>
+            ) : (
+              <select
+                value={newShipmentOrder}
+                onChange={(e) => setNewShipmentOrder(e.target.value)}
+                className="admin-form-select"
+                required
               >
-                &times;
-              </button>
-            </div>
+                {orders.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    #{o.orderNumber || o.id.substring(0, 8)} — {o.shippingAddress?.fullName || o.userEmail || 'Client'} (${((o.totalAmountPaise || 0) / 100).toLocaleString()})
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
 
-            <div className="space-y-3 text-xs font-mono">
-              <div>
-                <label className="block text-stone-600 mb-1">Target Order Commission</label>
-                {orders.length === 0 ? (
-                  <p className="p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-stone-500">
-                    No active orders found. Place an order on the storefront first.
-                  </p>
-                ) : (
-                  <select
-                    value={newShipmentOrder}
-                    onChange={(e) => setNewShipmentOrder(e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A]"
-                    required
-                  >
-                    {orders.map((o) => (
-                      <option key={o.id} value={o.id}>
-                        #{o.orderNumber || o.id.substring(0, 8)} — {o.shippingAddress?.fullName || o.userEmail || 'Client'} (${((o.totalAmountPaise || 0) / 100).toLocaleString()})
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+              Courier Transit Rail
+            </label>
+            <select
+              value={courierName}
+              onChange={(e) => setCourierName(e.target.value)}
+              className="admin-form-select"
+            >
+              <option value="Ferrari Group Armored Courier">Ferrari Group Armored Courier (Geneva - Zurich)</option>
+              <option value="Malca-Amit Luxury Transit">Malca-Amit High-Value Vault Escort</option>
+              <option value="Brinks Global Luxury Services">Brinks Global Luxury Air Escort</option>
+            </select>
+          </div>
 
-              <div>
-                <label className="block text-stone-600 mb-1">Courier Transit Rail</label>
-                <select
-                  value={courierName}
-                  onChange={(e) => setCourierName(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A]"
-                >
-                  <option value="Ferrari Group Armored Courier">Ferrari Group Armored Courier (Geneva - Zurich)</option>
-                  <option value="Malca-Amit Luxury Transit">Malca-Amit High-Value Vault Escort</option>
-                  <option value="Brinks Global Luxury Services">Brinks Global Luxury Air Escort</option>
-                </select>
-              </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+              Custom AWB / Waybill Code (Optional)
+            </label>
+            <input
+              type="text"
+              value={trackingNumber}
+              onChange={(e) => setTrackingNumber(e.target.value)}
+              placeholder="e.g. FG-CH-992140 (Auto-generated if blank)"
+              className="admin-form-input"
+            />
+          </div>
 
-              <div>
-                <label className="block text-stone-600 mb-1">Custom AWB / Waybill Code (Optional)</label>
-                <input
-                  type="text"
-                  value={trackingNumber}
-                  onChange={(e) => setTrackingNumber(e.target.value)}
-                  placeholder="e.g. FG-CH-992140 (Auto-generated if blank)"
-                  className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A]"
-                />
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-stone-100 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setCreateModal(false)}
-                className="px-4 py-2 rounded-xl text-xs font-mono text-stone-600 hover:bg-stone-100 transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={actionLoading || orders.length === 0}
-                className="px-5 py-2 rounded-xl text-xs font-mono bg-[#0F172A] text-white hover:bg-black transition disabled:opacity-50"
-              >
-                {actionLoading ? 'Dispatching...' : 'Dispatch Shipment'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+          <div className="admin-modal-footer">
+            <button
+              type="button"
+              onClick={() => setCreateModal(false)}
+              className="admin-btn-secondary"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={actionLoading || orders.length === 0}
+              className="admin-btn-primary"
+            >
+              {actionLoading ? 'Dispatching...' : 'Dispatch Shipment'}
+            </button>
+          </div>
+        </form>
+      </AdminModal>
 
       {/* Checkpoint Modal */}
-      {updateModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <form onSubmit={handleUpdateStatus} className="bg-white rounded-2xl max-w-md w-full border border-stone-200 shadow-2xl p-6 space-y-5">
-            <div className="flex items-start justify-between border-b border-stone-100 pb-3">
-              <div>
-                <span className="text-[10px] font-mono tracking-widest text-[#D4AF37] uppercase font-bold">
-                  Armored Transit Telemetry Log
-                </span>
-                <h3 className="font-serif text-xl text-[#0F172A] font-medium mt-0.5">
-                  Update {updateModal.trackingNumber || updateModal.awbNumber}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setUpdateModal(null)}
-                className="text-stone-400 hover:text-stone-700 text-lg leading-none"
+      <AdminModal
+        isOpen={!!updateModal}
+        onClose={() => setUpdateModal(null)}
+        subtitle="ARMORED TRANSIT TELEMETRY LOG"
+        title={updateModal ? `Update ${updateModal.trackingNumber || updateModal.awbNumber}` : ''}
+        maxWidth="max-w-md"
+      >
+        {updateModal && (
+          <form onSubmit={handleUpdateStatus} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+                Transit Status
+              </label>
+              <select
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value)}
+                className="admin-form-select"
               >
-                &times;
-              </button>
+                <option value="PENDING">PENDING</option>
+                <option value="IN_TRANSIT">IN_TRANSIT</option>
+                <option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY</option>
+                <option value="DELIVERED">DELIVERED</option>
+              </select>
             </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-mono text-stone-600 mb-1">
-                  Transit Status
-                </label>
-                <select
-                  value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A] font-mono"
-                >
-                  <option value="PENDING">PENDING</option>
-                  <option value="IN_TRANSIT">IN_TRANSIT</option>
-                  <option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY</option>
-                  <option value="DELIVERED">DELIVERED</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-mono text-stone-600 mb-1">
-                  Current Checkpoint Location
-                </label>
-                <input
-                  type="text"
-                  value={newLocation}
-                  onChange={(e) => setNewLocation(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A] font-mono"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-mono text-stone-600 mb-1">
-                  Telemetry / Inspection Description
-                </label>
-                <input
-                  type="text"
-                  value={eventDesc}
-                  onChange={(e) => setEventDesc(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A] font-mono"
-                  required
-                />
-              </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+                Current Checkpoint Location
+              </label>
+              <input
+                type="text"
+                value={newLocation}
+                onChange={(e) => setNewLocation(e.target.value)}
+                className="admin-form-input"
+                required
+              />
             </div>
 
-            <div className="pt-3 border-t border-stone-100 flex items-center justify-end gap-3">
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+                Telemetry / Inspection Description
+              </label>
+              <input
+                type="text"
+                value={eventDesc}
+                onChange={(e) => setEventDesc(e.target.value)}
+                className="admin-form-input"
+                required
+              />
+            </div>
+
+            <div className="admin-modal-footer">
               <button
                 type="button"
                 onClick={() => setUpdateModal(null)}
-                className="px-4 py-2 rounded-xl text-xs font-mono text-stone-600 hover:bg-stone-100 transition"
+                className="admin-btn-secondary"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={actionLoading}
-                className="px-4 py-2 rounded-xl text-xs font-mono bg-[#0F172A] text-white hover:bg-black transition disabled:opacity-50"
+                className="admin-btn-primary"
               >
                 {actionLoading ? 'Writing Checkpoint...' : 'Commit Telemetry'}
               </button>
             </div>
           </form>
-        </div>
-      )}
+        )}
+      </AdminModal>
     </div>
   );
 }

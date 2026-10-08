@@ -24,6 +24,13 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            "WHERE p.slug = :slug")
     Optional<Product> findBySlugWithDetails(@Param("slug") String slug);
 
+    @Query("SELECT p FROM Product p " +
+           "LEFT JOIN FETCH p.category " +
+           "LEFT JOIN FETCH p.collection " +
+           "LEFT JOIN FETCH p.attributes " +
+           "WHERE p.id = :id")
+    Optional<Product> findByIdWithDetails(@Param("id") UUID id);
+
     Optional<Product> findBySlug(String slug);
 
     Page<Product> findByStatus(ProductStatus status, Pageable pageable);

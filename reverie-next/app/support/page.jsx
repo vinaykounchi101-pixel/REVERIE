@@ -1,13 +1,40 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, MessageSquare, Mail, Phone, ChevronDown, ChevronUp } from 'lucide-react';
 import { faqCategories } from '../../data/allProductsData';
+import { supportService } from '../../services/supportService';
 import Button from '../../components/ui/Button';
 
 export default function SupportPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [openFaqs, setOpenFaqs] = useState({});
+  const [faqList, setFaqList] = useState(faqCategories);
+
+  useEffect(() => {
+    async function loadFaqs() {
+      try {
+        const liveFaqs = await supportService.getFaqs();
+        if (Array.isArray(liveFaqs) && liveFaqs.length > 0) {
+          // Group by category
+          const grouped = {};
+          liveFaqs.forEach((item) => {
+            const cat = item.category || 'General Inquiries';
+            if (!grouped[cat]) grouped[cat] = [];
+            grouped[cat].push({ q: item.question, a: item.answer });
+          });
+          const catArray = Object.keys(grouped).map((category) => ({
+            category,
+            faqs: grouped[category],
+          }));
+          setFaqList(catArray);
+        }
+      } catch (err) {
+        console.warn('Failed to load live FAQs:', err);
+      }
+    }
+    loadFaqs();
+  }, []);
 
   const toggleFaq = (idx) => {
     setOpenFaqs((prev) => ({ ...prev, [idx]: !prev[idx] }));
@@ -86,7 +113,7 @@ export default function SupportPage() {
         </div>
 
         <div className="support-faq-categories font-ui">
-          {faqCategories.map((cat, catIdx) => (
+          {faqList.map((cat, catIdx) => (
             <div key={cat.category} className="support-faq-group">
               <h3 className="support-faq-group-title font-display">{cat.category}</h3>
 

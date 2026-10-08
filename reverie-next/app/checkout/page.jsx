@@ -992,7 +992,7 @@ export default function CheckoutPage() {
 
       {/* Email OTP Verification Modal for Checkout */}
       {showOtpModal && (
-        <div className="auth-modal-overlay" onClick={() => setShowOtpModal(false)}>
+        <div className="auth-modal-backdrop" onClick={() => setShowOtpModal(false)}>
           <div 
             className="auth-modal-card font-ui" 
             onClick={(e) => e.stopPropagation()}

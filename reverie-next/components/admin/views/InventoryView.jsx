@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../DataTable';
 import StatusBadge from '../StatusBadge';
+import AdminModal from '../AdminModal';
 import { adminInventoryService, adminProductService } from '../../../services/admin/adminServices';
-import { Package, Plus, Minus, AlertTriangle, ShieldCheck, RefreshCw, Layers } from 'lucide-react';
+import { Package, Plus, Minus, AlertTriangle, ShieldCheck, RefreshCw, Layers, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function InventoryView() {
   const [inventory, setInventory] = useState([]);
@@ -86,15 +87,15 @@ export default function InventoryView() {
       sortable: true,
       render: (val, row) => (
         <div>
-          <p className="font-medium text-stone-900 text-xs">{val || 'Bespoke Model'}</p>
-          <p className="font-mono text-[10px] text-stone-400">SKU: {row.sku || 'REV-001'}</p>
+          <p style={{ fontWeight: 600, color: '#0F172A', fontSize: 13, margin: 0 }}>{val || 'Bespoke Model'}</p>
+          <p style={{ fontSize: 11, color: '#64748B', margin: '2px 0 0 0' }}>SKU: {row.sku || 'REV-001'}</p>
         </div>
       ),
     },
     {
       key: 'material',
       label: 'Vault Specification',
-      render: (val) => <span className="font-mono text-xs text-stone-600">{val || 'Titanium / Sapphire'}</span>,
+      render: (val) => <span style={{ fontSize: 12, color: '#334155' }}>{val || 'Titanium / Sapphire'}</span>,
     },
     {
       key: 'availableStock',
@@ -103,7 +104,7 @@ export default function InventoryView() {
       render: (val, row) => {
         const stock = val !== undefined ? val : row.allocatedStock || 0;
         return (
-          <span className="font-mono text-xs font-semibold text-[#0F172A]">
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, color: '#0F172A' }}>
             {stock} units
           </span>
         );
@@ -128,9 +129,21 @@ export default function InventoryView() {
             setQuantityDelta(5);
             setAdjustReason('Geneva Atelier Restock Batch');
           }}
-          className="px-2.5 py-1.5 rounded-lg border border-stone-200 bg-white text-stone-800 hover:bg-stone-50 text-xs font-mono font-medium flex items-center gap-1 transition"
+          style={{
+            padding: '5px 12px',
+            borderRadius: 8,
+            border: '1px solid #E2E8F0',
+            backgroundColor: '#FFFFFF',
+            color: '#0F172A',
+            fontSize: 11,
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
         >
-          <Plus className="w-3 h-3 text-[#D4AF37]" />
+          <Plus style={{ width: 12, height: 12, color: '#D4AF37' }} />
           <span>Adjust Stock</span>
         </button>
       ),
@@ -138,32 +151,74 @@ export default function InventoryView() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {notice && (
-        <div className={`p-4 rounded-xl text-xs font-mono border ${
-          notice.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'
-        }`}>
-          {notice.message}
+        <div
+          className={`admin-notice ${
+            notice.type === 'success' ? 'admin-notice-success' : 'admin-notice-error'
+          }`}
+        >
+          {notice.type === 'success' ? (
+            <CheckCircle2 style={{ width: 16, height: 16 }} />
+          ) : (
+            <AlertCircle style={{ width: 16, height: 16 }} />
+          )}
+          <span>{notice.message}</span>
         </div>
       )}
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-xl bg-white border border-stone-200 shadow-sm">
-          <span className="text-[10px] font-mono uppercase text-stone-400">Total Vault Units</span>
-          <p className="font-serif text-2xl text-[#0F172A] mt-1 font-medium">
-            {inventory.reduce((acc, curr) => acc + (curr.availableStock || curr.allocatedStock || 0), 0)}
-          </p>
+      <div className="admin-metric-grid">
+        <div className="admin-metric-card gold-accent">
+          <div className="admin-metric-top">
+            <div>
+              <span className="admin-metric-title">Total Vault Units</span>
+              <h3 className="admin-metric-value">
+                {inventory.reduce((acc, curr) => acc + (curr.availableStock || curr.allocatedStock || 0), 0)}
+              </h3>
+            </div>
+            <div className="admin-metric-icon-box">
+              <Package style={{ width: 20, height: 20 }} />
+            </div>
+          </div>
+          <div className="admin-metric-footer">
+            <span style={{ color: '#047857', fontWeight: 600 }}>Physical Inventory</span>
+            <span style={{ color: '#64748B' }}>Geneva Depository</span>
+          </div>
         </div>
-        <div className="p-4 rounded-xl bg-white border border-stone-200 shadow-sm">
-          <span className="text-[10px] font-mono uppercase text-stone-400">Low Stock SKUs</span>
-          <p className="font-serif text-2xl text-amber-600 mt-1 font-medium">
-            {inventory.filter((i) => (i.availableStock ?? i.allocatedStock ?? 0) <= 3).length}
-          </p>
+
+        <div className="admin-metric-card">
+          <div className="admin-metric-top">
+            <div>
+              <span className="admin-metric-title">Low Stock SKUs</span>
+              <h3 className="admin-metric-value" style={{ color: '#D97706' }}>
+                {inventory.filter((i) => (i.availableStock ?? i.allocatedStock ?? 0) <= 3).length}
+              </h3>
+            </div>
+            <div className="admin-metric-icon-box">
+              <AlertTriangle style={{ width: 20, height: 20, color: '#D97706' }} />
+            </div>
+          </div>
+          <div className="admin-metric-footer">
+            <span style={{ color: '#64748B' }}>Threshold: &le; 3 units</span>
+            <span style={{ color: '#D97706', fontWeight: 600 }}>Action Needed</span>
+          </div>
         </div>
-        <div className="p-4 rounded-xl bg-white border border-stone-200 shadow-sm">
-          <span className="text-[10px] font-mono uppercase text-stone-400">Active Timepiece SKUs</span>
-          <p className="font-serif text-2xl text-[#0F172A] mt-1 font-medium">{inventory.length}</p>
+
+        <div className="admin-metric-card">
+          <div className="admin-metric-top">
+            <div>
+              <span className="admin-metric-title">Active Reference SKUs</span>
+              <h3 className="admin-metric-value">{inventory.length}</h3>
+            </div>
+            <div className="admin-metric-icon-box">
+              <Layers style={{ width: 20, height: 20 }} />
+            </div>
+          </div>
+          <div className="admin-metric-footer">
+            <span style={{ color: '#64748B' }}>Master References</span>
+            <span style={{ color: '#047857', fontWeight: 600 }}>Active</span>
+          </div>
         </div>
       </div>
 
@@ -176,75 +231,61 @@ export default function InventoryView() {
       />
 
       {/* Stock Adjustment Modal */}
-      {adjustModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <form onSubmit={handleAdjustStock} className="bg-white rounded-2xl max-w-md w-full border border-stone-200 shadow-2xl p-6 space-y-5">
-            <div className="flex items-start justify-between border-b border-stone-100 pb-3">
-              <div>
-                <span className="text-[10px] font-mono tracking-widest text-[#D4AF37] uppercase font-bold">
-                  Vault Ledger Adjustment
-                </span>
-                <h3 className="font-serif text-xl text-[#0F172A] font-medium mt-0.5">
-                  {adjustModal.productTitle}
-                </h3>
-              </div>
+      <AdminModal
+        isOpen={!!adjustModal}
+        onClose={() => setAdjustModal(null)}
+        subtitle="VAULT LEDGER ADJUSTMENT"
+        title={adjustModal?.productTitle}
+        maxWidth="max-w-md"
+      >
+        {adjustModal && (
+          <form onSubmit={handleAdjustStock} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+                Quantity Delta (+ to add stock, - to deduct)
+              </label>
+              <input
+                type="number"
+                value={quantityDelta}
+                onChange={(e) => setQuantityDelta(e.target.value)}
+                className="admin-form-input"
+                required
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+                Adjustment Reason & Batch Reference
+              </label>
+              <input
+                type="text"
+                value={adjustReason}
+                onChange={(e) => setAdjustReason(e.target.value)}
+                placeholder="e.g. Geneva Atelier restock batch #402"
+                className="admin-form-input"
+                required
+              />
+            </div>
+
+            <div className="admin-modal-footer">
               <button
                 type="button"
                 onClick={() => setAdjustModal(null)}
-                className="text-stone-400 hover:text-stone-700 text-lg leading-none"
-              >
-                &times;
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-mono text-stone-600 mb-1">
-                  Quantity Delta (+ to add stock, - to deduct)
-                </label>
-                <input
-                  type="number"
-                  value={quantityDelta}
-                  onChange={(e) => setQuantityDelta(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A] font-mono font-semibold"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-mono text-stone-600 mb-1">
-                  Adjustment Reason & Batch Reference
-                </label>
-                <input
-                  type="text"
-                  value={adjustReason}
-                  onChange={(e) => setAdjustReason(e.target.value)}
-                  placeholder="e.g. Geneva Atelier restock batch #402"
-                  className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A] font-mono"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-stone-100 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setAdjustModal(null)}
-                className="px-4 py-2 rounded-xl text-xs font-mono text-stone-600 hover:bg-stone-100 transition"
+                className="admin-btn-secondary"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={actionLoading}
-                className="px-4 py-2 rounded-xl text-xs font-mono bg-[#0F172A] text-white hover:bg-black transition disabled:opacity-50"
+                className="admin-btn-primary"
               >
                 {actionLoading ? 'Updating Ledger...' : 'Commit to Vault'}
               </button>
             </div>
           </form>
-        </div>
-      )}
+        )}
+      </AdminModal>
     </div>
   );
 }

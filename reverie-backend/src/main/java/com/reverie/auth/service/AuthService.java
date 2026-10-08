@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -84,14 +85,31 @@ public class AuthService {
     @Transactional
     public UserDto register(RegisterRequest request, HttpServletRequest httpRequest) {
         String clientIp = getClientIp(httpRequest);
+        String emailClean = request.getEmail().toLowerCase().trim();
 
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new ConflictException(ErrorCode.CONFLICT, "An account with this email address already exists.");
+        Optional<User> existingUserOpt = userRepository.findByEmail(emailClean);
+        if (existingUserOpt.isPresent()) {
+            User existingUser = existingUserOpt.get();
+            if (!existingUser.isVerified()) {
+                // User started registration previously but has not yet completed verification.
+                // Update profile info, update password hash, re-issue and dispatch verification OTP.
+                existingUser.setFirstName(request.getFirstName().trim());
+                existingUser.setLastName(request.getLastName().trim());
+                existingUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+                if (request.getPhone() != null && !request.getPhone().isBlank()) {
+                    existingUser.setPhone(request.getPhone().trim());
+                }
+                User savedUser = userRepository.save(existingUser);
+                generateAndSaveOtp(savedUser, savedUser.getEmail(), "EMAIL_VERIFICATION");
+                auditService.logAction("CUSTOMER", savedUser.getId(), "USER_REGISTER_RETRY", "USER", savedUser.getId(), "SUCCESS", clientIp, null);
+                return UserDto.fromEntity(savedUser);
+            }
+            throw new ConflictException(ErrorCode.CONFLICT, "An account with this email address already exists. Please sign in.");
         }
 
         // FR-AUTH-032: Public registration MUST strictly create CUSTOMER role
         User user = new User(
-                request.getEmail().toLowerCase().trim(),
+                emailClean,
                 passwordEncoder.encode(request.getPassword()),
                 request.getFirstName().trim(),
                 request.getLastName().trim(),

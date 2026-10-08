@@ -46,36 +46,91 @@ export const adminProductService = {
     return res.data || res;
   },
   createProduct: async (productData) => {
-    try {
-      const res = await apiRequest('/admin/products', {
-        method: 'POST',
-        body: JSON.stringify(productData),
-      });
-      return res.data || res;
-    } catch {
-      return { success: true, ...productData, id: 'prod-' + Date.now() };
-    }
+    const payload = {
+      name: productData.title || productData.name,
+      title: productData.title || productData.name,
+      shortDescription: productData.subtitle || productData.shortDescription,
+      subtitle: productData.subtitle || productData.shortDescription,
+      collectionName: productData.collection || productData.collectionName,
+      categoryName: productData.collection || productData.categoryName,
+      basePricePaise: productData.basePricePaise || ((productData.price || 35000) * 100),
+      price: productData.price || 35000,
+      caseMaterial: productData.caseMaterial,
+      movement: productData.movement,
+      dialColor: productData.dial || productData.dialColor,
+      dial: productData.dial || productData.dialColor,
+      stock: Number(productData.stock ?? productData.stockQuantity ?? 10),
+      status: productData.status || 'PUBLISHED',
+      primaryImageUrl: productData.imageUrl || productData.primaryImageUrl || productData.image,
+      imageUrl: productData.imageUrl || productData.primaryImageUrl || productData.image,
+      description: productData.description || '',
+      gender: productData.gender || 'Unisex',
+    };
+
+    const res = await apiRequest('/admin/products', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return res.data || res;
   },
   updateProduct: async (id, productData) => {
-    try {
-      const res = await apiRequest(`/admin/products/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(productData),
+    const payload = {
+      name: productData.title || productData.name,
+      title: productData.title || productData.name,
+      shortDescription: productData.subtitle || productData.shortDescription,
+      subtitle: productData.subtitle || productData.shortDescription,
+      collectionName: productData.collection || productData.collectionName,
+      categoryName: productData.collection || productData.categoryName,
+      basePricePaise: productData.basePricePaise || ((productData.price || 35000) * 100),
+      price: productData.price || 35000,
+      caseMaterial: productData.caseMaterial,
+      movement: productData.movement,
+      dialColor: productData.dial || productData.dialColor,
+      dial: productData.dial || productData.dialColor,
+      stock: Number(productData.stock ?? productData.stockQuantity ?? 10),
+      status: productData.status || 'PUBLISHED',
+      primaryImageUrl: productData.imageUrl || productData.primaryImageUrl || productData.image,
+      imageUrl: productData.imageUrl || productData.primaryImageUrl || productData.image,
+      description: productData.description || '',
+      gender: productData.gender || 'Unisex',
+    };
+
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    if (isUuid) {
+      try {
+        const res = await apiRequest(`/admin/products/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        });
+        return res.data || res;
+      } catch (err) {
+        if (err.status === 404) {
+          const res = await apiRequest('/admin/products', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+          });
+          return res.data || res;
+        }
+        throw err;
+      }
+    } else {
+      // Local ID timepiece being edited for the first time -> persist to DB
+      const res = await apiRequest('/admin/products', {
+        method: 'POST',
+        body: JSON.stringify(payload),
       });
       return res.data || res;
-    } catch {
-      return { success: true, ...productData, id };
     }
   },
   deleteProduct: async (id) => {
-    try {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    if (isUuid) {
       const res = await apiRequest(`/admin/products/${id}`, {
         method: 'DELETE',
       });
       return res.data || res;
-    } catch {
-      return { success: true, id };
     }
+    return { success: true, id };
   },
 };
 

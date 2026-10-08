@@ -137,35 +137,84 @@ public class EmailService {
         dispatchEmail(toEmail, subject, htmlContent, otpCode, "PASSWORD_RESET");
     }
 
+    private String resolveBrevoApiKey() {
+        if (brevoApiKey != null && !brevoApiKey.isBlank() && !brevoApiKey.contains("${")) return brevoApiKey.trim();
+        for (String k : List.of("BREVO_API_KEY", "BREVO_KEY", "BREVO_APIKEY", "SENDINBLUE_API_KEY", "SENDINBLUE_KEY", "BREVO_SMTP_KEY")) {
+            String val = System.getProperty(k, System.getenv(k));
+            if (val != null && !val.isBlank() && !val.contains("${")) return val.trim();
+        }
+        return "";
+    }
+
+    private String resolveResendApiKey() {
+        if (resendApiKey != null && !resendApiKey.isBlank() && !resendApiKey.contains("${")) return resendApiKey.trim();
+        for (String k : List.of("RESEND_API_KEY", "RESEND_KEY", "RESEND_APIKEY")) {
+            String val = System.getProperty(k, System.getenv(k));
+            if (val != null && !val.isBlank() && !val.contains("${")) return val.trim();
+        }
+        return "";
+    }
+
+    private String resolveMailUsername() {
+        if (mailUsername != null && !mailUsername.isBlank() && !mailUsername.contains("${") && mailUsername.contains("@")) return mailUsername.trim();
+        for (String k : List.of("SPRING_MAIL_USERNAME", "MAIL_USERNAME", "SMTP_USERNAME", "BREVO_USER", "GMAIL_USERNAME")) {
+            String val = System.getProperty(k, System.getenv(k));
+            if (val != null && !val.isBlank() && !val.contains("${") && val.contains("@")) return val.trim();
+        }
+        return "";
+    }
+
+    private String resolveFromAddress() {
+        if (fromAddress != null && !fromAddress.isBlank() && !fromAddress.contains("${") && fromAddress.contains("@")) return fromAddress.trim();
+        for (String k : List.of("MAIL_FROM_ADDRESS", "BREVO_SENDER_EMAIL", "BREVO_FROM_EMAIL", "BREVO_USER", "BREVO_EMAIL", "SENDER_EMAIL", "SPRING_MAIL_USERNAME")) {
+            String val = System.getProperty(k, System.getenv(k));
+            if (val != null && !val.isBlank() && !val.contains("${") && val.contains("@")) return val.trim();
+        }
+        return "concierge@reverie.luxury";
+    }
+
     /**
-     * Central dispatcher coordinating Resend, Brevo, SMTP, and Mock fallbacks
+     * Central dispatcher coordinating Brevo, Resend, SMTP, and Mock fallbacks
      */
     private void dispatchEmail(String toEmail, String subject, String htmlContent, String otpCode, String type) {
         String provider = (emailProvider != null && !emailProvider.isBlank()) ? emailProvider.trim().toLowerCase() : "auto";
         boolean sent = false;
 
-        switch (provider) {
-            case "resend" -> sent = sendViaResend(toEmail, subject, htmlContent, type);
-            case "brevo" -> sent = sendViaBrevo(toEmail, subject, htmlContent, type);
-            case "smtp" -> sent = sendViaSmtp(toEmail, subject, htmlContent, type);
-            case "mock", "dev" -> {
-                log.info("[EMAIL MOCK] Provider set to '{}'. Dispatched simulated {} for [{}]: {}", provider, type, toEmail, otpCode);
-                return;
+        if ("mock".equals(provider) || "dev".equals(provider)) {
+            log.info("[EMAIL MOCK] Provider set to '{}'. Dispatched simulated {} for [{}]: {}", provider, type, toEmail, otpCode);
+            return;
+        }
+
+        if ("brevo".equals(provider)) {
+            sent = sendViaBrevo(toEmail, subject, htmlContent, type);
+        } else if ("resend".equals(provider)) {
+            sent = sendViaResend(toEmail, subject, htmlContent, type);
+        } else if ("smtp".equals(provider)) {
+            sent = sendViaSmtp(toEmail, subject, htmlContent, type);
+        }
+
+        // Waterfall fallback chain if not explicitly sent or if provider was "auto"
+        if (!sent) {
+            // 1. Try Brevo
+            String bKey = resolveBrevoApiKey();
+            if (!bKey.isBlank()) {
+                sent = sendViaBrevo(toEmail, subject, htmlContent, type);
             }
-            default -> {
-                // "auto" mode: dynamically route based on present credentials
-                if (resendApiKey != null && !resendApiKey.isBlank()) {
+            // 2. If Brevo not available or failed, try Resend
+            if (!sent) {
+                String rKey = resolveResendApiKey();
+                if (!rKey.isBlank()) {
                     sent = sendViaResend(toEmail, subject, htmlContent, type);
-                } else if (brevoApiKey != null && !brevoApiKey.isBlank()) {
-                    sent = sendViaBrevo(toEmail, subject, htmlContent, type);
-                } else if (mailSender != null && mailUsername != null && !mailUsername.isBlank()) {
-                    sent = sendViaSmtp(toEmail, subject, htmlContent, type);
                 }
+            }
+            // 3. If still not delivered, try SMTP
+            if (!sent) {
+                sent = sendViaSmtp(toEmail, subject, htmlContent, type);
             }
         }
 
         if (!sent) {
-            log.info("[EMAIL FALLBACK NOTIFICATION] Dispatched simulated {} token for [{}] (Code: {}). Provide RESEND_API_KEY, BREVO_API_KEY, or SPRING_MAIL_USERNAME in environment for live delivery.", type, toEmail, otpCode);
+            log.info("[EMAIL FALLBACK NOTIFICATION] Dispatched simulated {} token for [{}] (Code: {}). Provide BREVO_API_KEY, RESEND_API_KEY, or SPRING_MAIL_USERNAME in environment for live delivery.", type, toEmail, otpCode);
         }
     }
 
@@ -173,13 +222,17 @@ public class EmailService {
      * Resend API Provider (https://resend.com)
      */
     private boolean sendViaResend(String toEmail, String subject, String htmlContent, String type) {
-        if (resendApiKey == null || resendApiKey.isBlank()) {
+        String apiKey = resolveResendApiKey();
+        if (apiKey.isBlank()) {
             log.warn("[EMAIL RESEND] RESEND_API_KEY is not configured.");
             return false;
         }
 
         try {
-            String senderEmail = (fromAddress != null && !fromAddress.isBlank()) ? fromAddress : "onboarding@resend.dev";
+            String senderEmail = resolveFromAddress();
+            if ("concierge@reverie.luxury".equalsIgnoreCase(senderEmail)) {
+                senderEmail = "onboarding@resend.dev";
+            }
             String fromFormatted = (fromName != null && !fromName.isBlank()) ? fromName + " <" + senderEmail + ">" : senderEmail;
 
             Map<String, Object> payload = Map.of(
@@ -193,7 +246,7 @@ public class EmailService {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(resendApiUrl != null && !resendApiUrl.isBlank() ? resendApiUrl : "https://api.resend.com/emails"))
-                    .header("Authorization", "Bearer " + resendApiKey.trim())
+                    .header("Authorization", "Bearer " + apiKey)
                     .header("Content-Type", "application/json")
                     .timeout(Duration.ofSeconds(10))
                     .POST(HttpRequest.BodyPublishers.ofString(jsonBody, StandardCharsets.UTF_8))
@@ -205,11 +258,11 @@ public class EmailService {
                 log.info("[EMAIL RESEND SUCCESS] Dispatched {} notification to {} via Resend API (HTTP {})", type, toEmail, response.statusCode());
                 return true;
             } else {
-                log.error("[EMAIL RESEND ERROR] Failed to dispatch {} email via Resend to {}: HTTP {} - {}", type, toEmail, response.statusCode(), response.body());
+                log.warn("[EMAIL RESEND ERROR] Failed to dispatch {} email via Resend to {}: HTTP {} - {}", type, toEmail, response.statusCode(), response.body());
                 return false;
             }
         } catch (Exception e) {
-            log.error("[EMAIL RESEND EXCEPTION] Error dispatching to {}: {}", toEmail, e.getMessage());
+            log.warn("[EMAIL RESEND EXCEPTION] Error dispatching to {}: {}", toEmail, e.getMessage());
             return false;
         }
     }
@@ -218,13 +271,14 @@ public class EmailService {
      * Brevo API Provider (https://brevo.com / Sendinblue)
      */
     private boolean sendViaBrevo(String toEmail, String subject, String htmlContent, String type) {
-        if (brevoApiKey == null || brevoApiKey.isBlank()) {
+        String apiKey = resolveBrevoApiKey();
+        if (apiKey.isBlank()) {
             log.warn("[EMAIL BREVO] BREVO_API_KEY is not configured.");
             return false;
         }
 
         try {
-            String senderEmail = (fromAddress != null && !fromAddress.isBlank()) ? fromAddress : "concierge@reverie.luxury";
+            String senderEmail = resolveFromAddress();
             String senderName = (fromName != null && !fromName.isBlank()) ? fromName : "REVERIE Haute Horlogerie";
 
             Map<String, Object> payload = Map.of(
@@ -238,7 +292,7 @@ public class EmailService {
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(brevoApiUrl != null && !brevoApiUrl.isBlank() ? brevoApiUrl : "https://api.brevo.com/v3/smtp/email"))
-                    .header("api-key", brevoApiKey.trim())
+                    .header("api-key", apiKey)
                     .header("accept", "application/json")
                     .header("Content-Type", "application/json")
                     .timeout(Duration.ofSeconds(10))
@@ -251,11 +305,11 @@ public class EmailService {
                 log.info("[EMAIL BREVO SUCCESS] Dispatched {} notification to {} via Brevo API (HTTP {})", type, toEmail, response.statusCode());
                 return true;
             } else {
-                log.error("[EMAIL BREVO ERROR] Failed to dispatch {} email via Brevo to {}: HTTP {} - {}. Note: Ensure your sender address ({}) is verified in Brevo Dashboard.", type, toEmail, response.statusCode(), response.body(), senderEmail);
+                log.warn("[EMAIL BREVO ERROR] Failed to dispatch {} email via Brevo to {}: HTTP {} - {}. (Sender: {})", type, toEmail, response.statusCode(), response.body(), senderEmail);
                 return false;
             }
         } catch (Exception e) {
-            log.error("[EMAIL BREVO EXCEPTION] Error dispatching to {}: {}", toEmail, e.getMessage());
+            log.warn("[EMAIL BREVO EXCEPTION] Error dispatching to {}: {}", toEmail, e.getMessage());
             return false;
         }
     }
@@ -264,7 +318,8 @@ public class EmailService {
      * Standard SMTP Provider (Gmail, Brevo SMTP relay, Amazon SES, Postmark, etc.)
      */
     private boolean sendViaSmtp(String toEmail, String subject, String htmlContent, String type) {
-        if (mailSender == null || mailUsername == null || mailUsername.isBlank()) {
+        String username = resolveMailUsername();
+        if (mailSender == null || username.isBlank()) {
             log.warn("[EMAIL SMTP NOT CONFIGURED] SMTP credentials (SPRING_MAIL_USERNAME) not set in environment.");
             return false;
         }
@@ -273,7 +328,10 @@ public class EmailService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            String sender = (fromAddress != null && !fromAddress.isBlank()) ? fromAddress : mailUsername;
+            String sender = resolveFromAddress();
+            if (sender.isBlank() || "concierge@reverie.luxury".equalsIgnoreCase(sender)) {
+                sender = username;
+            }
             helper.setFrom(sender, fromName);
             helper.setTo(toEmail);
             helper.setSubject(subject);
@@ -283,10 +341,10 @@ public class EmailService {
             log.info("[EMAIL SMTP SUCCESS] Transmitted {} notification to {} via SMTP", type, toEmail);
             return true;
         } catch (MessagingException | UnsupportedEncodingException e) {
-            log.error("[EMAIL SMTP ERROR] Failed to send {} email via SMTP to {}: {}", type, toEmail, e.getMessage());
+            log.warn("[EMAIL SMTP ERROR] Failed to send {} email via SMTP to {}: {}", type, toEmail, e.getMessage());
             return false;
         } catch (Exception ex) {
-            log.error("[EMAIL SMTP ERROR] Unexpected error while dispatching email to {}: {}", toEmail, ex.getMessage());
+            log.warn("[EMAIL SMTP ERROR] Unexpected error while dispatching email to {}: {}", toEmail, ex.getMessage());
             return false;
         }
     }

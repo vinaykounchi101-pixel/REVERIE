@@ -23,6 +23,7 @@ import {
   Zap
 } from 'lucide-react';
 import { allWatchCatalog } from '../../../data/allProductsData';
+import { catalogService } from '../../../services/catalogService';
 import Button from '../../../components/ui/Button';
 import { useCart } from '../../../context/CartContext';
 import { useWishlist } from '../../../context/WishlistContext';
@@ -34,17 +35,63 @@ export default function ProductDetailPage() {
   const { isInWishlist, toggleWishlist } = useWishlist();
 
   const productId = params?.id;
-  const currentProduct = allWatchCatalog.find((w) => w.id === productId) || allWatchCatalog[0];
+  const initialLocal = allWatchCatalog.find((w) => w.id === productId || w.ref?.toLowerCase() === productId?.toLowerCase()) || allWatchCatalog[0];
 
-  const [selectedImage, setSelectedImage] = useState(currentProduct.image);
+  const [currentProduct, setCurrentProduct] = useState(initialLocal);
+  const [selectedImage, setSelectedImage] = useState(initialLocal.image);
   const [selectedDial, setSelectedDial] = useState(0);
   const [selectedStrap, setSelectedStrap] = useState(
-    currentProduct.straps && currentProduct.straps.length > 0 ? currentProduct.straps[0] : 'Alligator Leather'
+    initialLocal.straps && initialLocal.straps.length > 0 ? initialLocal.straps[0] : 'Alligator Leather'
   );
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState('overview');
   const [added, setAdded] = useState(false);
   const isWishlisted = isInWishlist(currentProduct?.id);
+
+  useEffect(() => {
+    async function loadLiveProduct() {
+      if (!productId) return;
+      try {
+        const live = await catalogService.getProductById(productId);
+        if (live) {
+          const normalized = {
+            id: live.id || live.slug || productId,
+            name: live.name || live.title,
+            ref: live.referenceNumber || live.sku || live.ref || 'REF-REV-01',
+            price: live.basePricePaise ? live.basePricePaise / 100 : (live.price || 35000),
+            image: live.primaryImageUrl || live.imageUrl || live.image || '/images/watches/classic-royale.webp',
+            tagline: live.shortDescription || live.summary || live.tagline || 'Swiss Haute Horlogerie Masterpiece',
+            category: live.categoryName || live.category || 'Grande Complication',
+            gender: live.gender || 'Unisex',
+            caseSize: live.attributes?.caseDiameter || (live.caseDiameterMm ? `${live.caseDiameterMm}mm` : '41mm'),
+            description: live.description || live.shortDescription || '',
+            gallery: live.media?.map(m => m.url) || [live.primaryImageUrl || live.image || '/images/watches/classic-royale.webp'],
+            specs: {
+              caseDiameter: live.attributes?.caseDiameter || '41mm',
+              thickness: live.attributes?.thickness || '10.5mm',
+              caseMaterial: live.attributes?.caseMaterial || 'Grade 5 Titanium / Sapphire',
+              movement: live.attributes?.movement || 'Calibre REV-901 Automatic',
+              powerReserve: live.attributes?.powerReserve || '72 Hours',
+              crystal: live.attributes?.crystal || 'Sapphire Crystal with AR Coating',
+              waterResistance: live.attributes?.waterResistance || '100m (10 ATM)',
+              strapWidth: live.attributes?.strapWidth || '20mm',
+            },
+            dialColors: live.attributes?.dialColor ? [live.attributes.dialColor] : ["#1D3557", "#111215", "#D6C5A9"],
+            straps: ['Grade 5 Titanium', 'Hand-Stitched Alligator Leather', 'Rubber Sport Strap'],
+            isNew: live.isNew || false,
+            isLimitedEdition: live.editionSize ? true : false,
+            rating: live.rating || 5,
+            reviewsCount: live.reviewsCount || 12,
+          };
+          setCurrentProduct(normalized);
+          setSelectedImage(normalized.image);
+        }
+      } catch (err) {
+        console.error('Failed to load live product:', err);
+      }
+    }
+    loadLiveProduct();
+  }, [productId]);
 
   useEffect(() => {
     if (currentProduct) {

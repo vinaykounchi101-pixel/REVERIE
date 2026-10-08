@@ -11,20 +11,46 @@ export default function CustomersView() {
   const fetchPatrons = async () => {
     setLoading(true);
     try {
-      const usersData = await adminUserService.getUsers('', 'ALL', 0, 50);
-      const userList = usersData.content || (Array.isArray(usersData) ? usersData : []);
-      
-      const enriched = userList.map((u, idx) => ({
-        id: u.id,
-        fullName: u.fullName || u.name || (u.email ? u.email.split('@')[0] : 'Collector'),
-        email: u.email,
-        phone: u.phone || '+41 22 819 0000',
-        tier: idx % 3 === 0 ? 'Geneva Club VIP' : idx % 2 === 0 ? 'Private Collector' : 'Registered Patron',
-        totalSpendPaise: (48000 + (idx * 15500)) * 100,
-        commissionsCount: 1 + (idx % 4),
-        status: u.active !== false ? 'CONFIRMED' : 'CANCELLED',
-        joinedDate: u.createdAt || '2026-01-15',
-      }));
+      const [usersData, ordersData] = await Promise.allSettled([
+        adminUserService.getUsers('', 'ALL', 0, 100),
+        adminOrderService.getOrders(null, 0, 100),
+      ]);
+
+      const usersRes = usersData.status === 'fulfilled' ? usersData.value : null;
+      const ordersRes = ordersData.status === 'fulfilled' ? ordersData.value : null;
+
+      const userList = usersRes?.content || (Array.isArray(usersRes) ? usersRes : []);
+      const orderList = ordersRes?.content || (Array.isArray(ordersRes) ? ordersRes : []);
+
+      const enriched = userList.map((u) => {
+        const userOrders = orderList.filter(
+          (o) => o.userId === u.id || o.userEmail?.toLowerCase() === u.email?.toLowerCase()
+        );
+        const totalSpend = userOrders.reduce(
+          (sum, o) => sum + (o.totalAmountPaise || (o.amount ? o.amount * 100 : 0)),
+          0
+        );
+        const count = userOrders.length;
+        
+        let tier = 'Registered Patron';
+        if (totalSpend >= 50000000) {
+          tier = 'Geneva VIP Circle';
+        } else if (totalSpend > 0 || count > 0) {
+          tier = 'Private Collector';
+        }
+
+        return {
+          id: u.id,
+          fullName: u.fullName || u.name || (u.email ? u.email.split('@')[0] : 'Distinguished Patron'),
+          email: u.email,
+          phone: u.phone || u.shippingAddress?.phone || '—',
+          tier,
+          totalSpendPaise: totalSpend,
+          commissionsCount: count,
+          status: u.active !== false ? 'CONFIRMED' : 'CANCELLED',
+          joinedDate: u.createdAt || new Date().toISOString(),
+        };
+      });
 
       setPatrons(enriched);
     } catch (err) {
@@ -45,13 +71,13 @@ export default function CustomersView() {
       sortable: true,
       render: (val, row) => (
         <div>
-          <p className="font-medium text-stone-900 text-xs flex items-center gap-1.5">
+          <p style={{ fontWeight: 600, color: '#0F172A', fontSize: 13, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
             {val}
             {row.tier?.includes('VIP') && (
-              <Star className="w-3 h-3 text-[#D4AF37] fill-[#D4AF37]" />
+              <Star style={{ width: 13, height: 13, color: '#D4AF37', fill: '#D4AF37' }} />
             )}
           </p>
-          <p className="font-mono text-[10px] text-stone-400">{row.email}</p>
+          <p style={{ fontSize: 11, color: '#64748B', margin: '2px 0 0 0' }}>{row.email}</p>
         </div>
       ),
     },
@@ -59,7 +85,7 @@ export default function CustomersView() {
       key: 'tier',
       label: 'Patronage Tier',
       render: (val) => (
-        <span className="font-mono text-xs text-[#0F172A] font-semibold bg-stone-100 px-2 py-0.5 rounded-md border border-stone-200">
+        <span style={{ fontSize: 11, fontWeight: 600, color: '#0F172A', backgroundColor: '#F1F5F9', padding: '3px 8px', borderRadius: 6, border: '1px solid #E2E8F0' }}>
           {val}
         </span>
       ),
@@ -68,7 +94,7 @@ export default function CustomersView() {
       key: 'commissionsCount',
       label: 'Commissions',
       sortable: true,
-      render: (val) => <span className="font-mono text-xs text-stone-700">{val} timepieces</span>,
+      render: (val) => <span style={{ fontSize: 12, color: '#334155' }}>{val} timepieces</span>,
     },
     {
       key: 'totalSpendPaise',
@@ -76,29 +102,36 @@ export default function CustomersView() {
       sortable: true,
       render: (val) => {
         const amt = (val || 0) / 100;
-        return <span className="font-mono font-semibold text-[#0F172A]">${amt.toLocaleString()}</span>;
+        return <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: '#0F172A' }}>${amt.toLocaleString()}</span>;
       },
     },
     {
       key: 'status',
       label: 'Account Health',
-      render: (val) => <StatusBadge status={val === 'CONFIRMED' ? 'IN_STOCK' : 'OUT_OF_STOCK'} customLabel={val === 'CONFIRMED' ? 'ACTIVE' : 'SUSPENDED'} />,
+      render: (val) => (
+        <StatusBadge
+          status={val === 'CONFIRMED' ? 'IN_STOCK' : 'OUT_OF_STOCK'}
+          customLabel={val === 'CONFIRMED' ? 'ACTIVE' : 'SUSPENDED'}
+        />
+      ),
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-white border border-stone-200">
+      <div style={{ padding: 20, borderRadius: 16, backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
         <div>
-          <h2 className="font-serif text-lg text-[#0F172A] font-medium">Collector & Patron Directory</h2>
-          <p className="text-xs font-mono text-stone-500 mt-0.5">
-            Haute horlogerie clients, private acquisition histories & VIP tiers
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: '#0F172A', fontWeight: 600, margin: 0 }}>
+            Collector & Patron Directory
+          </h2>
+          <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0 0' }}>
+            Live accounts, genuine order expenditures & patronage status from PostgreSQL database
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-stone-500">
-            {patrons.length} Collectors Enrolled
+        <div>
+          <span style={{ fontSize: 12, color: '#64748B', backgroundColor: '#F8FAFC', padding: '6px 12px', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+            {patrons.length} Registered Patrons
           </span>
         </div>
       </div>

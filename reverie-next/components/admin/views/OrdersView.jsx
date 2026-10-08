@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../DataTable';
 import StatusBadge from '../StatusBadge';
+import AdminModal from '../AdminModal';
 import { adminOrderService } from '../../../services/admin/adminServices';
-import { ShoppingBag, Eye, CheckCircle2, Truck, XCircle, ArrowUpRight, RefreshCw } from 'lucide-react';
+import { ShoppingBag, Eye, CheckCircle2, Truck, XCircle, ArrowUpRight, RefreshCw, AlertCircle } from 'lucide-react';
 
 export default function OrdersView() {
   const [orders, setOrders] = useState([]);
@@ -70,7 +71,7 @@ export default function OrdersView() {
       label: 'Commission #',
       sortable: true,
       render: (val, row) => (
-        <span className="font-mono font-semibold text-[#0F172A]">
+        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#0F172A' }}>
           #{val || row.id?.substring(0, 8)}
         </span>
       ),
@@ -80,7 +81,7 @@ export default function OrdersView() {
       label: 'Placed Date',
       sortable: true,
       render: (val) => (
-        <span className="font-mono text-xs text-stone-500">
+        <span style={{ fontSize: 12, color: '#64748B' }}>
           {val ? new Date(val).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Today'}
         </span>
       ),
@@ -90,10 +91,10 @@ export default function OrdersView() {
       label: 'Collector & Destination',
       render: (_, row) => (
         <div>
-          <p className="font-medium text-stone-900 text-xs">
+          <p style={{ fontWeight: 600, color: '#0F172A', fontSize: 13, margin: 0 }}>
             {row.shippingAddress?.fullName || row.userEmail || 'Distinguished Patron'}
           </p>
-          <p className="font-mono text-[11px] text-stone-400">
+          <p style={{ fontSize: 11, color: '#64748B', margin: '2px 0 0 0' }}>
             {row.shippingAddress?.city || 'Zurich'}, {row.shippingAddress?.country || 'Switzerland'}
           </p>
         </div>
@@ -112,7 +113,7 @@ export default function OrdersView() {
       render: (val, row) => {
         const amount = (val || (row.amount ? row.amount * 100 : 0)) / 100;
         return (
-          <span className="font-mono font-semibold text-[#0F172A]">
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: '#0F172A' }}>
             ${amount.toLocaleString()}
           </span>
         );
@@ -122,19 +123,38 @@ export default function OrdersView() {
       key: 'actions',
       label: 'Executive Actions',
       render: (_, row) => (
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <button
             onClick={() => setSelectedOrder(row)}
-            className="p-1.5 rounded-lg border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition"
+            style={{
+              padding: 6,
+              borderRadius: 8,
+              border: '1px solid #E2E8F0',
+              backgroundColor: '#FFFFFF',
+              color: '#334155',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
             title="Inspect Dossier"
           >
-            <Eye className="w-3.5 h-3.5" />
+            <Eye style={{ width: 14, height: 14, color: '#D4AF37' }} />
           </button>
           {row.status === 'PENDING' && (
             <button
               onClick={() => handleStatusUpdate(row.id, 'CONFIRMED')}
               disabled={actionLoading}
-              className="px-2 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 text-[10px] font-mono font-semibold transition"
+              style={{
+                padding: '4px 10px',
+                borderRadius: 8,
+                backgroundColor: '#EFF6FF',
+                color: '#1D4ED8',
+                border: '1px solid #BFDBFE',
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
             >
               Confirm
             </button>
@@ -143,7 +163,16 @@ export default function OrdersView() {
             <button
               onClick={() => handleStatusUpdate(row.id, 'PROCESSING')}
               disabled={actionLoading}
-              className="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 text-[10px] font-mono font-semibold transition"
+              style={{
+                padding: '4px 10px',
+                borderRadius: 8,
+                backgroundColor: '#EEF2FF',
+                color: '#4338CA',
+                border: '1px solid #C7D2FE',
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
             >
               Atelier Prep
             </button>
@@ -152,7 +181,16 @@ export default function OrdersView() {
             <button
               onClick={() => handleStatusUpdate(row.id, 'SHIPPED')}
               disabled={actionLoading}
-              className="px-2 py-1 rounded-lg bg-cyan-50 text-cyan-700 border border-cyan-200 hover:bg-cyan-100 text-[10px] font-mono font-semibold transition"
+              style={{
+                padding: '4px 10px',
+                borderRadius: 8,
+                backgroundColor: '#ECFEFF',
+                color: '#0E7490',
+                border: '1px solid #A5F3FC',
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
             >
               Armored Dispatch
             </button>
@@ -161,7 +199,16 @@ export default function OrdersView() {
             <button
               onClick={() => handleStatusUpdate(row.id, 'DELIVERED')}
               disabled={actionLoading}
-              className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 text-[10px] font-mono font-semibold transition"
+              style={{
+                padding: '4px 10px',
+                borderRadius: 8,
+                backgroundColor: '#ECFDF5',
+                color: '#047857',
+                border: '1px solid #A7F3D0',
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
             >
               Confirm Delivery
             </button>
@@ -172,26 +219,39 @@ export default function OrdersView() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {notice && (
-        <div className={`p-4 rounded-xl text-xs font-mono border ${
-          notice.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'
-        }`}>
-          {notice.message}
+        <div
+          className={`admin-notice ${
+            notice.type === 'success' ? 'admin-notice-success' : 'admin-notice-error'
+          }`}
+        >
+          {notice.type === 'success' ? (
+            <CheckCircle2 style={{ width: 16, height: 16 }} />
+          ) : (
+            <AlertCircle style={{ width: 16, height: 16 }} />
+          )}
+          <span>{notice.message}</span>
         </div>
       )}
 
       {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
         {['ALL', 'PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'].map((tab) => (
           <button
             key={tab}
             onClick={() => setStatusFilter(tab)}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-mono transition ${
-              statusFilter === tab
-                ? 'bg-[#0F172A] text-white font-semibold shadow-sm'
-                : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50'
-            }`}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 10,
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+              backgroundColor: statusFilter === tab ? '#0F172A' : '#FFFFFF',
+              color: statusFilter === tab ? '#FFFFFF' : '#475569',
+              border: `1px solid ${statusFilter === tab ? '#0F172A' : '#E2E8F0'}`,
+            }}
           >
             {tab}
           </button>
@@ -208,61 +268,74 @@ export default function OrdersView() {
       />
 
       {/* Order Detail Modal */}
-      {selectedOrder && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-stone-200 shadow-2xl p-6 sm:p-8 space-y-6">
-            <div className="flex items-start justify-between border-b border-stone-100 pb-4">
-              <div>
-                <span className="text-[10px] font-mono tracking-widest text-[#D4AF37] uppercase font-bold">
-                  Haute Horlogerie Commission Dossier
+      <AdminModal
+        isOpen={!!selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+        subtitle="HAUTE HORLOGERIE COMMISSION DOSSIER"
+        title={selectedOrder ? `Order #${selectedOrder.orderNumber || selectedOrder.id}` : ''}
+        maxWidth="max-w-2xl"
+      >
+        {selectedOrder && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+              <div style={{ padding: 14, borderRadius: 12, backgroundColor: '#FAF9F6', border: '1px solid #E2E8F0' }}>
+                <span style={{ fontSize: 10, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', fontWeight: 600 }}>
+                  Patron Information
                 </span>
-                <h3 className="font-serif text-2xl text-[#0F172A] font-medium mt-1">
-                  Order #{selectedOrder.orderNumber || selectedOrder.id}
-                </h3>
-              </div>
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="p-1 rounded-lg text-stone-400 hover:text-stone-700 text-lg leading-none"
-              >
-                &times;
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="p-3.5 rounded-xl bg-[#FAF9F6] border border-stone-200">
-                <span className="text-stone-400 font-mono uppercase text-[10px] block">Patron Info</span>
-                <p className="font-medium text-stone-900 mt-1">{selectedOrder.shippingAddress?.fullName || 'Collector'}</p>
-                <p className="text-stone-500 font-mono">{selectedOrder.userEmail || '—'}</p>
-                <p className="text-stone-500 font-mono">{selectedOrder.shippingAddress?.phone || '—'}</p>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#0F172A', margin: '4px 0 0 0' }}>
+                  {selectedOrder.shippingAddress?.fullName || 'Distinguished Collector'}
+                </p>
+                <p style={{ fontSize: 12, color: '#64748B', margin: '2px 0 0 0' }}>{selectedOrder.userEmail || '—'}</p>
+                <p style={{ fontSize: 12, color: '#64748B', margin: '2px 0 0 0' }}>{selectedOrder.shippingAddress?.phone || '—'}</p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-[#FAF9F6] border border-stone-200">
-                <span className="text-stone-400 font-mono uppercase text-[10px] block">Delivery Destination</span>
-                <p className="font-medium text-stone-900 mt-1">{selectedOrder.shippingAddress?.addressLine1 || 'Geneva Vault'}</p>
-                <p className="text-stone-500 font-mono">
+              <div style={{ padding: 14, borderRadius: 12, backgroundColor: '#FAF9F6', border: '1px solid #E2E8F0' }}>
+                <span style={{ fontSize: 10, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', fontWeight: 600 }}>
+                  Delivery Destination
+                </span>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#0F172A', margin: '4px 0 0 0' }}>
+                  {selectedOrder.shippingAddress?.addressLine1 || 'Geneva Vault'}
+                </p>
+                <p style={{ fontSize: 12, color: '#64748B', margin: '2px 0 0 0' }}>
                   {selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.postalCode}
                 </p>
-                <p className="text-stone-500 font-mono">{selectedOrder.shippingAddress?.country || 'Switzerland'}</p>
+                <p style={{ fontSize: 12, color: '#64748B', margin: '2px 0 0 0' }}>{selectedOrder.shippingAddress?.country || 'Switzerland'}</p>
               </div>
             </div>
 
             {/* Line items */}
             <div>
-              <h4 className="text-xs font-mono uppercase tracking-wider text-stone-500 font-semibold mb-3">
+              <h4 style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748B', fontWeight: 600, marginBottom: 10 }}>
                 Allocated Timepieces
               </h4>
-              <div className="divide-y divide-stone-100 border border-stone-200 rounded-xl overflow-hidden">
+              <div style={{ border: '1px solid #E2E8F0', borderRadius: 12, overflow: 'hidden' }}>
                 {(selectedOrder.items || []).length === 0 ? (
-                  <div className="p-4 text-xs font-mono text-stone-400 text-center">Standard Bespoke Commission</div>
+                  <div style={{ padding: 16, fontSize: 12, color: '#94A3B8', textAlign: 'center' }}>
+                    Standard Bespoke Commission
+                  </div>
                 ) : (
                   selectedOrder.items.map((item, idx) => (
-                    <div key={idx} className="p-3.5 flex items-center justify-between bg-white">
+                    <div
+                      key={idx}
+                      style={{
+                        padding: '12px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backgroundColor: '#FFFFFF',
+                        borderBottom: idx < selectedOrder.items.length - 1 ? '1px solid #F1F5F9' : 'none',
+                      }}
+                    >
                       <div>
-                        <p className="font-medium text-stone-900 text-xs">{item.productName || 'REVERIE Timepiece'}</p>
-                        <p className="text-[10px] font-mono text-stone-400">SKU: {item.sku || 'REV-001'} &bull; Qty: {item.quantity}</p>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: '#0F172A', margin: 0 }}>
+                          {item.productName || 'REVERIE Timepiece'}
+                        </p>
+                        <p style={{ fontSize: 11, color: '#64748B', margin: '2px 0 0 0' }}>
+                          SKU: {item.sku || 'REV-001'} &bull; Qty: {item.quantity}
+                        </p>
                       </div>
-                      <span className="font-mono text-xs font-semibold text-[#0F172A]">
-                        ${((item.unitPricePaise || 0) * item.quantity / 100).toLocaleString()}
+                      <span style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, color: '#0F172A' }}>
+                        ${(((item.unitPricePaise || 0) * item.quantity) / 100).toLocaleString()}
                       </span>
                     </div>
                   ))
@@ -271,29 +344,29 @@ export default function OrdersView() {
             </div>
 
             {/* Action Buttons in Modal */}
-            <div className="pt-4 border-t border-stone-100 flex items-center justify-between">
+            <div className="admin-modal-footer">
               {selectedOrder.status !== 'CANCELLED' && selectedOrder.status !== 'DELIVERED' ? (
                 <button
+                  type="button"
                   onClick={() => handleCancelOrder(selectedOrder.id)}
                   disabled={actionLoading}
-                  className="px-3 py-2 rounded-xl text-xs font-mono text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 transition"
+                  className="admin-btn-danger"
                 >
                   Cancel Commission
                 </button>
-              ) : (
-                <div />
-              )}
+              ) : null}
 
               <button
+                type="button"
                 onClick={() => setSelectedOrder(null)}
-                className="px-4 py-2 rounded-xl text-xs font-mono bg-[#0F172A] text-white hover:bg-black transition"
+                className="admin-btn-primary"
               >
                 Close Dossier
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </AdminModal>
     </div>
   );
 }

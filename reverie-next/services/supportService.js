@@ -66,4 +66,16 @@ export const supportService = {
       return null;
     }
   },
+
+  /**
+   * Fetch published FAQs
+   */
+  async getFaqs() {
+    try {
+      const res = await apiRequest('/faqs');
+      return res.data || [];
+    } catch {
+      return [];
+    }
+  },
 };

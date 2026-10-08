@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../DataTable';
 import StatusBadge from '../StatusBadge';
+import AdminModal from '../AdminModal';
 import { adminCmsService } from '../../../services/admin/adminServices';
-import { FileText, Plus, Trash2, Edit3, Eye, Sparkles, BookOpen } from 'lucide-react';
+import { FileText, Plus, Trash2, Edit3, Eye, Sparkles, BookOpen, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function CmsView() {
   const [stories, setStories] = useState([]);
@@ -20,7 +21,7 @@ export default function CmsView() {
     setLoading(true);
     try {
       const data = await adminCmsService.getStories(0, 50);
-      const list = data.content || (Array.isArray(data) ? data : []);
+      const list = data?.content || (Array.isArray(data) ? data : []);
       setStories(list);
     } catch (err) {
       console.error('Failed to load stories:', err);
@@ -100,15 +101,15 @@ export default function CmsView() {
       sortable: true,
       render: (val, row) => (
         <div>
-          <p className="font-serif font-medium text-stone-900 text-sm">{val}</p>
-          <p className="font-mono text-[10px] text-stone-400">/{row.slug}</p>
+          <p style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 600, color: '#0F172A', margin: 0 }}>{val}</p>
+          <p style={{ fontSize: 11, color: '#64748B', margin: '2px 0 0 0' }}>/{row.slug}</p>
         </div>
       ),
     },
     {
       key: 'readingTimeMinutes',
       label: 'Reading Depth',
-      render: (val) => <span className="font-mono text-xs text-stone-600">{val || 4} min read</span>,
+      render: (val) => <span style={{ fontSize: 12, color: '#475569' }}>{val || 4} min read</span>,
     },
     {
       key: 'status',
@@ -120,7 +121,7 @@ export default function CmsView() {
       key: 'createdAt',
       label: 'Archived Date',
       render: (val) => (
-        <span className="font-mono text-xs text-stone-500">
+        <span style={{ fontSize: 12, color: '#64748B' }}>
           {val ? new Date(val).toLocaleDateString('en-GB') : 'Autumn 2026'}
         </span>
       ),
@@ -129,20 +130,40 @@ export default function CmsView() {
       key: 'actions',
       label: 'Editorial Controls',
       render: (_, row) => (
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <button
             onClick={() => handleOpenModal(row)}
-            className="p-1.5 rounded-lg border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 transition"
+            style={{
+              padding: 6,
+              borderRadius: 8,
+              border: '1px solid #E2E8F0',
+              backgroundColor: '#FFFFFF',
+              color: '#334155',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
             title="Edit Chapter"
           >
-            <Edit3 className="w-3.5 h-3.5" />
+            <Edit3 style={{ width: 14, height: 14, color: '#2563EB' }} />
           </button>
           <button
             onClick={() => handleDeleteStory(row.id)}
-            className="p-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition"
+            style={{
+              padding: 6,
+              borderRadius: 8,
+              border: '1px solid #FECDD3',
+              backgroundColor: '#FFF1F2',
+              color: '#BE123C',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
             title="Delete Chapter"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 style={{ width: 14, height: 14 }} />
           </button>
         </div>
       ),
@@ -150,31 +171,21 @@ export default function CmsView() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {notice && (
-        <div className={`p-4 rounded-xl text-xs font-mono border ${
-          notice.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'
-        }`}>
-          {notice.message}
+        <div
+          className={`admin-notice ${
+            notice.type === 'success' ? 'admin-notice-success' : 'admin-notice-error'
+          }`}
+        >
+          {notice.type === 'success' ? (
+            <CheckCircle2 style={{ width: 16, height: 16 }} />
+          ) : (
+            <AlertCircle style={{ width: 16, height: 16 }} />
+          )}
+          <span>{notice.message}</span>
         </div>
       )}
-
-      {/* Header and New Story CTA */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-white border border-stone-200">
-        <div>
-          <h2 className="font-serif text-lg text-[#0F172A] font-medium">Haute Horlogerie Stories & CMS</h2>
-          <p className="text-xs font-mono text-stone-500 mt-0.5">
-            Curate brand philosophy, metallurgical journals & watchmaking heritage
-          </p>
-        </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="px-3.5 py-2 rounded-xl bg-[#0F172A] text-white hover:bg-black text-xs font-mono font-medium flex items-center gap-2 shadow-sm transition"
-        >
-          <Plus className="w-3.5 h-3.5 text-[#D4AF37]" />
-          <span>Publish New Chapter</span>
-        </button>
-      </div>
 
       <DataTable
         columns={columns}
@@ -182,111 +193,120 @@ export default function CmsView() {
         loading={loading}
         searchPlaceholder="Search stories by title, slug, or content..."
         emptyMessage="No editorial articles found in CMS."
+        actions={
+          <button
+            onClick={() => handleOpenModal()}
+            className="admin-btn-primary"
+            style={{
+              backgroundColor: '#060B14',
+              border: '1px solid #1E293B',
+            }}
+          >
+            <Plus style={{ width: 14, height: 14, color: '#D4AF37' }} />
+            <span>Publish New Chapter</span>
+          </button>
+        }
       />
 
       {/* Story Editor Modal */}
-      {storyModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <form onSubmit={handleSaveStory} className="bg-white rounded-2xl max-w-2xl w-full border border-stone-200 shadow-2xl p-6 sm:p-8 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-start justify-between border-b border-stone-100 pb-3">
-              <div>
-                <span className="text-[10px] font-mono tracking-widest text-[#D4AF37] uppercase font-bold">
-                  Editorial Chapter Composer
-                </span>
-                <h3 className="font-serif text-2xl text-[#0F172A] font-medium mt-0.5">
-                  {storyModal.isNew ? 'Create New Story' : 'Edit Story Chapter'}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setStoryModal(null)}
-                className="text-stone-400 hover:text-stone-700 text-lg leading-none"
-              >
-                &times;
-              </button>
+      <AdminModal
+        isOpen={!!storyModal}
+        onClose={() => setStoryModal(null)}
+        subtitle="EDITORIAL CHAPTER COMPOSER"
+        title={storyModal?.isNew ? 'Create New Story' : 'Edit Story Chapter'}
+        maxWidth="max-w-2xl"
+      >
+        {storyModal && (
+          <form onSubmit={handleSaveStory} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+                Story Chapter Title *
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Chapter IV: The Metallurgy of Rose Gold"
+                className="admin-form-input"
+                required
+              />
             </div>
 
-            <div className="space-y-3 text-xs font-mono">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div>
-                <label className="block text-stone-600 mb-1">Story Chapter Title</label>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+                  URL Slug
+                </label>
                 <input
                   type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Chapter IV: The Metallurgy of Rose Gold"
-                  className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A]"
-                  required
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  placeholder="e.g. metallurgy-of-rose-gold"
+                  className="admin-form-input"
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-stone-600 mb-1">URL Slug</label>
-                  <input
-                    type="text"
-                    value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
-                    placeholder="e.g. metallurgy-of-rose-gold"
-                    className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-stone-600 mb-1">Publication State</label>
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A]"
-                  >
-                    <option value="PUBLISHED">PUBLISHED</option>
-                    <option value="DRAFT">DRAFT</option>
-                    <option value="ARCHIVED">ARCHIVED</option>
-                  </select>
-                </div>
-              </div>
-
               <div>
-                <label className="block text-stone-600 mb-1">Executive Summary / Standfirst</label>
-                <textarea
-                  value={summary}
-                  onChange={(e) => setSummary(e.target.value)}
-                  rows={2}
-                  placeholder="A concise philosophical introduction..."
-                  className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-stone-600 mb-1">Article Body (Markdown Supported)</label>
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  rows={8}
-                  placeholder="Write the complete horological story..."
-                  className="w-full px-3 py-2 text-sm bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-[#0F172A]"
-                  required
-                />
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+                  Publication State
+                </label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="admin-form-select"
+                >
+                  <option value="PUBLISHED">PUBLISHED</option>
+                  <option value="DRAFT">DRAFT</option>
+                  <option value="ARCHIVED">ARCHIVED</option>
+                </select>
               </div>
             </div>
 
-            <div className="pt-3 border-t border-stone-100 flex items-center justify-end gap-3">
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+                Executive Summary / Standfirst
+              </label>
+              <textarea
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                rows={2}
+                placeholder="A concise philosophical introduction..."
+                className="admin-form-textarea"
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#334155', marginBottom: 6 }}>
+                Article Body (Markdown Supported) *
+              </label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                rows={7}
+                placeholder="Write the complete horological story..."
+                className="admin-form-textarea"
+                required
+              />
+            </div>
+
+            <div className="admin-modal-footer">
               <button
                 type="button"
                 onClick={() => setStoryModal(null)}
-                className="px-4 py-2 rounded-xl text-xs font-mono text-stone-600 hover:bg-stone-100 transition"
+                className="admin-btn-secondary"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={actionLoading}
-                className="px-5 py-2 rounded-xl text-xs font-mono bg-[#0F172A] text-white hover:bg-black transition disabled:opacity-50"
+                className="admin-btn-primary"
               >
                 {actionLoading ? 'Saving...' : 'Publish Article'}
               </button>
             </div>
           </form>
-        </div>
-      )}
+        )}
+      </AdminModal>
     </div>
   );
 }

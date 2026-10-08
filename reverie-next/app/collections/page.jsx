@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Heart, SlidersHorizontal, Eye, Sparkles, Compass, Check } from 'lucide-react';
+import { catalogService } from '../../services/catalogService';
 import { allWatchCatalog } from '../../data/allProductsData';
 import Button from '../../components/ui/Button';
 import { useCart } from '../../context/CartContext';
@@ -15,6 +16,8 @@ function CollectionsContent() {
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
 
+  const [products, setProducts] = useState(allWatchCatalog || []);
+  const [loading, setLoading] = useState(true);
   const [selectedGender, setSelectedGender] = useState(genderParam);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('featured');
@@ -25,6 +28,48 @@ function CollectionsContent() {
       setSelectedGender(genderParam);
     }
   }, [genderParam]);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadCatalog() {
+      try {
+        const data = await catalogService.getProducts({ size: 50 });
+        if (!isMounted) return;
+        if (data && data.length > 0) {
+          // Normalize backend products
+          const normalized = data.map((item) => ({
+            id: item.id || item.slug,
+            name: item.name || item.title,
+            ref: item.sku || item.referenceNumber || item.ref || 'REF-REV-01',
+            price: item.basePricePaise ? item.basePricePaise / 100 : (item.price || 35000),
+            image: item.primaryImageUrl || item.imageUrl || item.image || '/assets/watch-classic-blue-front.jpg',
+            tagline: item.shortDescription || item.summary || item.tagline || item.subtitle || 'Swiss Haute Horlogerie',
+            category: item.categoryName || item.category || 'Classic',
+            gender: item.gender || 'Unisex',
+            caseSize: item.caseDiameterMm ? `${item.caseDiameterMm}mm` : (item.caseSize || '38mm'),
+            isNew: item.isNew || false,
+            isLimitedEdition: item.isLimitedEdition || false,
+            rating: item.rating || 5,
+            straps: item.straps || ['Alligator Leather', 'Grade 5 Titanium'],
+            status: item.status || 'PUBLISHED',
+          }));
+
+          // Merge with local catalog models for full 24-piece collection showcase
+          const existingNames = new Set(normalized.map(p => (p.name || '').toLowerCase().trim()));
+          const extraLocal = (allWatchCatalog || []).filter(w => !existingNames.has((w.name || '').toLowerCase().trim()));
+          setProducts([...normalized, ...extraLocal]);
+        } else {
+          setProducts(allWatchCatalog || []);
+        }
+      } catch (err) {
+        if (isMounted) setProducts(allWatchCatalog || []);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    loadCatalog();
+    return () => { isMounted = false; };
+  }, []);
 
   const genderTabs = ['All', 'Men', 'Women'];
   
@@ -52,15 +97,28 @@ function CollectionsContent() {
     setTimeout(() => setAddedItem(null), 2000);
   };
 
-  const filteredProducts = allWatchCatalog.filter((item) => {
-    const matchGender = selectedGender === 'All' || (item.gender && item.gender.toLowerCase() === selectedGender.toLowerCase());
-    const matchCategory = selectedCategory === 'All' || item.category.toLowerCase() === selectedCategory.toLowerCase();
+  const filteredProducts = products.filter((item) => {
+    if (item.status && item.status !== 'PUBLISHED') return false;
+    const g = (item.gender || 'Unisex').toLowerCase();
+    const selG = selectedGender.toLowerCase();
+    const matchGender =
+      selG === 'all' ||
+      g === selG ||
+      g === 'unisex' ||
+      (selG === 'women' && (g === 'women' || g === 'unisex')) ||
+      (selG === 'men' && (g === 'men' || g === 'unisex'));
+
+    const matchCategory =
+      selectedCategory === 'All' ||
+      (item.category && item.category.toLowerCase().includes(selectedCategory.toLowerCase())) ||
+      (item.name && item.name.toLowerCase().includes(selectedCategory.toLowerCase())) ||
+      (item.tagline && item.tagline.toLowerCase().includes(selectedCategory.toLowerCase()));
     return matchGender && matchCategory;
   }).sort((a, b) => {
     if (sortBy === 'price-asc') return a.price - b.price;
     if (sortBy === 'price-desc') return b.price - a.price;
     if (sortBy === 'rating') return b.rating - a.rating;
-    if (sortBy === 'ref-asc') return a.ref.localeCompare(b.ref);
+    if (sortBy === 'ref-asc') return (a.ref || '').localeCompare(b.ref || '');
     return 0;
   });
 
@@ -77,14 +135,14 @@ function CollectionsContent() {
           <div className="collections-banner-overlay" />
         </div>
         <div className="container collections-banner-content">
-          <span className="eyebrow eyebrow-dark font-ui">CATALOGUE RAISONN�</span>
+          <span className="eyebrow eyebrow-dark font-ui">CATALOGUE RAISONNï¿½</span>
           <h1 className="collections-banner-title font-display">
             {selectedGender === 'All'
               ? 'Complete Horological Collection'
               : `${selectedGender}'s Haute Horlogerie`}
           </h1>
           <p className="collections-banner-subtitle font-ui">
-            Discover {allWatchCatalog.length} masterpieces of Swiss micro-engineering, hand-finished in Gen�ve.
+            Discover {(products.length || 11)} masterpieces of Swiss micro-engineering, hand-finished in Genï¿½ve.
           </p>
         </div>
       </section>
@@ -268,3 +326,4 @@ export default function CollectionsPage() {
     </Suspense>
   );
 }
+
