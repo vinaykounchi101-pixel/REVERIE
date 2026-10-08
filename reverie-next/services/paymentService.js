@@ -29,15 +29,21 @@ export const paymentService = {
   /**
    * Verify cryptographic payment signature or capture
    */
-  async verifyPayment(paymentId, signature, razorpayPaymentId = null, stripeIntentId = null) {
+  async verifyPayment(paymentId, payload) {
     try {
+      // Support passing either a payload object or legacy argument list
+      let payloadMap = {};
+      if (typeof payload === 'object' && payload !== null) {
+        payloadMap = payload;
+      } else {
+        payloadMap = { signature: arguments[1], razorpay_payment_id: arguments[2] };
+      }
+
       const res = await apiRequest('/payments/verify', {
         method: 'POST',
         body: JSON.stringify({
           paymentId,
-          signature,
-          razorpayPaymentId,
-          stripePaymentIntentId: stripeIntentId,
+          payload: payloadMap,
         }),
       });
       return res.data || res;
