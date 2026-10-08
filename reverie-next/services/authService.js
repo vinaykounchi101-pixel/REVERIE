@@ -274,42 +274,56 @@ export const authService = {
 
   // Request 6-digit Checkout Authorization OTP
   async requestCheckoutOtp(email) {
-    const res = await fetch(`${API_BASE}/auth/otp/request`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.trim(), type: 'CHECKOUT_VERIFICATION' }),
-    });
+    try {
+      const res = await fetch(`${API_BASE}/auth/otp/request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), type: 'CHECKOUT_VERIFICATION' }),
+      });
 
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok || !json.success) {
-      const err = new Error(json.message || 'Failed to dispatch checkout verification code.');
-      err.status = res.status;
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.success) {
+        const err = new Error(json.message || 'Failed to dispatch checkout verification code.');
+        err.status = res.status;
+        throw err;
+      }
+
+      return json;
+    } catch (err) {
+      if (err.name === 'TypeError' || err.message?.includes('fetch') || err.message?.includes('Failed to fetch')) {
+        throw new Error('Unable to connect to backend server. Please verify your Spring Boot backend is running.');
+      }
       throw err;
     }
-
-    return json;
   },
 
   // Verify 6-digit Checkout Authorization OTP
   async verifyCheckoutOtp(email, otp) {
-    const res = await fetch(`${API_BASE}/auth/otp/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.trim(), otp: otp.trim() }),
-    });
+    try {
+      const res = await fetch(`${API_BASE}/auth/otp/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), otp: otp.trim() }),
+      });
 
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok || !json.success) {
-      const err = new Error(json.message || 'Invalid or expired acquisition authorization code.');
-      err.status = res.status;
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.success) {
+        const err = new Error(json.message || 'Invalid or expired acquisition authorization code.');
+        err.status = res.status;
+        throw err;
+      }
+
+      if (json.data && json.data.accessToken) {
+        this.setAuthSession(json.data);
+      }
+
+      return json.data;
+    } catch (err) {
+      if (err.name === 'TypeError' || err.message?.includes('fetch') || err.message?.includes('Failed to fetch')) {
+        throw new Error('Unable to connect to backend server. Please verify your Spring Boot backend is running.');
+      }
       throw err;
     }
-
-    if (json.data && json.data.accessToken) {
-      this.setAuthSession(json.data);
-    }
-
-    return json.data;
   },
 
   // Resend 6-digit OTP
