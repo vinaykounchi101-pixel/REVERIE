@@ -35,6 +35,16 @@ services:
         fromDatabase:
           name: reverie-db
           property: password
+      - key: DB_SSLMODE
+        value: require
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: REVERIE Haute Horlogerie
+      - key: EMAIL_PROVIDER
+        value: auto
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_ORIGIN
