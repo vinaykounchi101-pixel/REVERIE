@@ -196,16 +196,11 @@ public class EmailService {
     }
 
     /**
-     * Central dispatcher coordinating Brevo, Resend, SMTP, and Mock fallbacks
+     * Central dispatcher coordinating live Brevo, Resend, and SMTP delivery
      */
     private void dispatchEmail(String toEmail, String subject, String htmlContent, String otpCode, String type) {
         String provider = (emailProvider != null && !emailProvider.isBlank()) ? emailProvider.trim().toLowerCase() : "auto";
         boolean sent = false;
-
-        if ("mock".equals(provider) || "dev".equals(provider)) {
-            log.info("[EMAIL MOCK] Provider set to '{}'. Dispatched simulated {} for [{}]: {}", provider, type, toEmail, otpCode);
-            return;
-        }
 
         if ("brevo".equals(provider)) {
             sent = sendViaBrevo(toEmail, subject, htmlContent, type);
@@ -215,7 +210,7 @@ public class EmailService {
             sent = sendViaSmtp(toEmail, subject, htmlContent, type);
         }
 
-        // Waterfall fallback chain if not explicitly sent or if provider was "auto"
+        // Waterfall chain if not explicitly sent or if provider was "auto"
         if (!sent) {
             // 1. Try Brevo
             String bKey = resolveBrevoApiKey();
@@ -236,7 +231,7 @@ public class EmailService {
         }
 
         if (!sent) {
-            log.info("[EMAIL FALLBACK NOTIFICATION] Dispatched simulated {} token for [{}] (Code: {}). Provide BREVO_API_KEY, RESEND_API_KEY, or SPRING_MAIL_USERNAME in environment for live delivery.", type, toEmail, otpCode);
+            log.error("[EMAIL DISPATCH ERROR] Failed to deliver {} email to [{}]. Ensure live credentials (BREVO_API_KEY, RESEND_API_KEY, or SPRING_MAIL_USERNAME) and MAIL_FROM_ADDRESS are configured.", type, toEmail);
         }
     }
 
