@@ -29,11 +29,14 @@ public class ReverieApplication {
         String dbHost = getEnvOrProp("DB_HOST");
         String dbPort = getEnvOrProp("DB_PORT", "5432");
         String dbName = getEnvOrProp("DB_NAME", "postgres");
-        String dbUser = getEnvOrProp("DB_USER", getEnvOrProp("POSTGRES_USER", "postgres"));
+        String dbUser = getEnvOrProp("DB_USER", getEnvOrProp("POSTGRES_USER"));
         String dbPass = getEnvOrProp("DB_PASSWORD", getEnvOrProp("POSTGRES_PASSWORD", ""));
         String sslMode = getEnvOrProp("DB_SSLMODE", "require");
 
         String rawDbUrl = getEnvOrProp("SPRING_DATASOURCE_URL", getEnvOrProp("DATABASE_URL", getEnvOrProp("DB_URL")));
+        String finalJdbcUrl = null;
+        String finalUser = dbUser;
+        String finalPass = dbPass;
 
         if (rawDbUrl != null && !rawDbUrl.isBlank() && !rawDbUrl.contains("${")) {
             try {
@@ -46,38 +49,54 @@ public class ReverieApplication {
                     
                     if (uri.getUserInfo() != null && !uri.getUserInfo().isBlank()) {
                         String[] userPass = uri.getUserInfo().split(":", 2);
-                        if (userPass.length > 0) dbUser = URLDecoder.decode(userPass[0], StandardCharsets.UTF_8);
-                        if (userPass.length > 1) dbPass = URLDecoder.decode(userPass[1], StandardCharsets.UTF_8);
+                        if (userPass.length > 0) finalUser = URLDecoder.decode(userPass[0], StandardCharsets.UTF_8);
+                        if (userPass.length > 1) finalPass = URLDecoder.decode(userPass[1], StandardCharsets.UTF_8);
                     }
                     
-                    String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + "/" + path + "?sslmode=" + sslMode;
-                    System.setProperty("spring.datasource.url", jdbcUrl);
-                    System.setProperty("spring.datasource.username", dbUser);
-                    System.setProperty("spring.datasource.password", dbPass);
-                    log.info("[DB NORMALIZER] Normalized URI database URL to target {}:{}/{} for user {} (SSL: {})", host, port, path, dbUser, sslMode);
-                    return;
+                    finalJdbcUrl = "jdbc:postgresql://" + host + ":" + port + "/" + path + "?sslmode=" + sslMode;
                 } else if (rawDbUrl.startsWith("jdbc:postgresql://")) {
-                    String finalUrl = rawDbUrl;
-                    if (!finalUrl.contains("sslmode=")) {
-                        finalUrl += (finalUrl.contains("?") ? "&" : "?") + "sslmode=" + sslMode;
+                    finalJdbcUrl = rawDbUrl;
+                    if (!finalJdbcUrl.contains("sslmode=")) {
+                        finalJdbcUrl += (finalJdbcUrl.contains("?") ? "&" : "?") + "sslmode=" + sslMode;
                     }
-                    System.setProperty("spring.datasource.url", finalUrl);
-                    if (dbUser != null && !dbUser.isBlank()) System.setProperty("spring.datasource.username", dbUser);
-                    if (dbPass != null) System.setProperty("spring.datasource.password", dbPass);
-                    log.info("[DB NORMALIZER] Configured JDBC datasource with SSL mode {}", sslMode);
-                    return;
                 }
             } catch (Exception ex) {
-                log.warn("[DB NORMALIZER] Failed parsing raw database URL: {}", ex.getMessage());
+                log.error("[DB CONFIG ERROR] Failed parsing raw database URL: {}", ex.getMessage(), ex);
             }
         }
 
-        if (dbHost != null && !dbHost.isBlank() && !dbHost.contains("${")) {
-            String jdbcUrl = "jdbc:postgresql://" + dbHost + ":" + dbPort + "/" + dbName + "?sslmode=" + sslMode;
-            System.setProperty("spring.datasource.url", jdbcUrl);
-            System.setProperty("spring.datasource.username", dbUser);
-            System.setProperty("spring.datasource.password", dbPass);
-            log.info("[DB NORMALIZER] Configured PostgreSQL connection target: {}:{}/{} for user: {} (SSL: {})", dbHost, dbPort, dbName, dbUser, sslMode);
+        if (finalJdbcUrl == null && dbHost != null && !dbHost.isBlank() && !dbHost.contains("${")) {
+            finalJdbcUrl = "jdbc:postgresql://" + dbHost + ":" + dbPort + "/" + dbName + "?sslmode=" + sslMode;
+        }
+
+        if (finalJdbcUrl != null) {
+            System.setProperty("spring.datasource.url", finalJdbcUrl);
+            if (finalUser != null && !finalUser.isBlank()) System.setProperty("spring.datasource.username", finalUser);
+            if (finalPass != null) System.setProperty("spring.datasource.password", finalPass);
+
+            log.info("================================================================================");
+            log.info("[DB PRE-FLIGHT PROBE] Connecting to: {}", finalJdbcUrl);
+            log.info("[DB PRE-FLIGHT PROBE] Target User: {}", finalUser);
+            log.info("================================================================================");
+
+            // Execute pre-flight probe to immediately expose connection/auth failure with full trace
+            try {
+                Class.forName("org.postgresql.Driver");
+                try (java.sql.Connection conn = java.sql.DriverManager.getConnection(finalJdbcUrl, finalUser, finalPass)) {
+                    log.info("[DB PRE-FLIGHT SUCCESS] Successfully connected to PostgreSQL! Product: {}, Version: {}", 
+                            conn.getMetaData().getDatabaseProductName(), 
+                            conn.getMetaData().getDatabaseProductVersion());
+                }
+            } catch (java.sql.SQLException sqlEx) {
+                log.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                log.error("[DB PRE-FLIGHT FATAL ERROR] Failed connecting to database: {}", sqlEx.getMessage());
+                log.error("[DB PRE-FLIGHT SQLSTATE] SQLState: {}, ErrorCode: {}", sqlEx.getSQLState(), sqlEx.getErrorCode());
+                log.error("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", sqlEx);
+            } catch (Exception e) {
+                log.error("[DB PRE-FLIGHT ERROR] Unexpected driver error: {}", e.getMessage(), e);
+            }
+        } else {
+            log.error("[DB CONFIG FATAL] No DB_HOST or DATABASE_URL provided. Database connection cannot be established.");
         }
     }
 

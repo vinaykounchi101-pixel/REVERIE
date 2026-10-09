@@ -1,14 +1,15 @@
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:${DATABASE_URL:${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:reverie_db}?sslmode=${DB_SSLMODE:require}}}}
-    username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:${DB_USERNAME:reverie_user}}}
-    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:}}
+    url: ${spring.datasource.url:${SPRING_DATASOURCE_URL:${DATABASE_URL:${DB_URL:jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME:postgres}?sslmode=${DB_SSLMODE:require}}}}}
+    username: ${spring.datasource.username:${SPRING_DATASOURCE_USERNAME:${DB_USER:${DB_USERNAME}}}}
+    password: ${spring.datasource.password:${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:}}}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
+      maximum-pool-size: 10
+      minimum-idle: 2
       idle-timeout: 30000
       connection-timeout: 20000
+      initialization-fail-timeout: 10000
   jpa:
     hibernate:
       ddl-auto: validate
@@ -23,12 +24,15 @@ spring:
 
 server:
   error:
-    include-message: never
-    include-binding-errors: never
-    include-stacktrace: never
-    include-exception: false
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: always
+    include-exception: true
 
 logging:
   level:
     root: INFO
-    com.reverie: INFO
+    com.reverie: DEBUG
+    org.flywaydb: DEBUG
+    com.zaxxer.hikari: DEBUG
+    org.springframework.jdbc: DEBUG
