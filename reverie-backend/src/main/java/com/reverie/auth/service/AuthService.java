@@ -347,7 +347,7 @@ public class AuthService {
         String email = request.getEmail().toLowerCase().trim();
         String clientIp = getClientIp(httpRequest);
         String rateLimitKey = "login_otp:" + email + ":" + clientIp;
-        rateLimiterService.checkRateLimit(rateLimitKey, 5, 900);
+        rateLimiterService.checkRateLimit(rateLimitKey, 10, 900);
 
         User user = userRepository.findByEmail(email).orElse(null);
         if (user != null && !user.isActive()) {

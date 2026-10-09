@@ -8,6 +8,17 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL
     ? 'http://localhost:8080/api'
     : '/api');
 
+function getErrorMessage(json, fallback) {
+  if (!json) return fallback;
+  if (json.detail) return json.detail;
+  if (json.message) return json.message;
+  if (json.title) return json.title;
+  if (json.errors && Array.isArray(json.errors) && json.errors.length > 0) {
+    return json.errors.map((e) => e.message || `${e.field}: invalid`).join(', ');
+  }
+  return fallback;
+}
+
 const TOKEN_KEY = 'reverie_access_token';
 const REFRESH_KEY = 'reverie_refresh_token';
 const USER_KEY = 'reverie_auth_user';
@@ -283,7 +294,7 @@ export const authService = {
 
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.success) {
-        const err = new Error(json.message || 'Failed to dispatch checkout verification code.');
+        const err = new Error(getErrorMessage(json, 'Failed to dispatch checkout verification code.'));
         err.status = res.status;
         throw err;
       }
@@ -308,7 +319,7 @@ export const authService = {
 
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.success) {
-        const err = new Error(json.message || 'Invalid or expired acquisition authorization code.');
+        const err = new Error(getErrorMessage(json, 'Invalid or expired acquisition authorization code.'));
         err.status = res.status;
         throw err;
       }
