@@ -26,30 +26,20 @@ public class WebConfig implements WebMvcConfigurer {
         List<String> origins = Arrays.asList(allowedOrigins.split(","));
         List<String> patterns = new java.util.ArrayList<>();
 
-        // In production, strictly use configured origins; in local/dev allow local ports & dev tunnels
-        if ("production".equalsIgnoreCase(environment)) {
-            for (String origin : origins) {
-                String trimmed = origin.trim();
-                if (!trimmed.isEmpty()) {
-                    patterns.add(trimmed);
-                }
+        for (String origin : origins) {
+            String trimmed = origin.trim();
+            if (!trimmed.isEmpty()) {
+                patterns.add(trimmed);
             }
-        } else {
-            patterns.addAll(Arrays.asList(
-                "http://localhost:*",
-                "http://127.0.0.1:*",
-                "https://*.onrender.com",
-                "https://*.vercel.app",
-                "https://*.loca.lt",
-                "https://*.ngrok-free.app",
-                "https://*.ngrok.io"
-            ));
-            for (String origin : origins) {
-                String trimmed = origin.trim();
-                if (!trimmed.isEmpty() && !patterns.contains(trimmed)) {
-                    patterns.add(trimmed);
-                }
-            }
+        }
+        if (!patterns.contains("https://*.vercel.app")) {
+            patterns.add("https://*.vercel.app");
+        }
+        if (!patterns.contains("https://*.onrender.com")) {
+            patterns.add("https://*.onrender.com");
+        }
+        if (!patterns.contains("http://localhost:*")) {
+            patterns.add("http://localhost:*");
         }
         configuration.setAllowedOriginPatterns(patterns);
         
