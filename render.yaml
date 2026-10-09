@@ -16,25 +16,15 @@ services:
       - key: APP_ENVIRONMENT
         value: production
       - key: DB_HOST
-        fromDatabase:
-          name: reverie-db
-          property: host
+        sync: false
       - key: DB_PORT
-        fromDatabase:
-          name: reverie-db
-          property: port
+        value: 5432
       - key: DB_NAME
-        fromDatabase:
-          name: reverie-db
-          property: database
+        value: postgres
       - key: DB_USER
-        fromDatabase:
-          name: reverie-db
-          property: user
+        sync: false
       - key: DB_PASSWORD
-        fromDatabase:
-          name: reverie-db
-          property: password
+        sync: false
       - key: DB_SSLMODE
         value: require
       - key: BREVO_API_KEY
@@ -69,13 +59,3 @@ services:
         value: 20.17.0
       - key: NEXT_PUBLIC_API_URL
         value: https://reverie-backend.onrender.com/api
-
-databases:
-  # =========================================================================
-  # 3. REVERIE Managed PostgreSQL Database
-  # =========================================================================
-  - name: reverie-db
-    databaseName: reverie_db
-    user: reverie_user
-    plan: free
-    ipAllowList: [] # Accessible by all Render services
