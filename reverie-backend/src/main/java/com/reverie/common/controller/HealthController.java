@@ -13,7 +13,7 @@ import java.time.Instant;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/health")
+@RequestMapping({"/api/health", "/health", "/actuator/health"})
 @Tag(name = "Health & Diagnostics", description = "System liveness and environment diagnostics")
 public class HealthController {
 

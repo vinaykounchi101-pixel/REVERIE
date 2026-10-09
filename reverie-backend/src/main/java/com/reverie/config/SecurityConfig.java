@@ -38,7 +38,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Actuator & Health
-                .requestMatchers("/api/health", "/actuator/**").permitAll()
+                .requestMatchers("/api/health", "/health", "/actuator/**", "/actuator/health").permitAll()
 
                 // Swagger & OpenAPI documentation
                 .requestMatchers(
