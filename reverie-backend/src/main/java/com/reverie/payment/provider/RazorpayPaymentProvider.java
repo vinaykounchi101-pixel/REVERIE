@@ -18,13 +18,13 @@ import java.util.UUID;
 @Component
 public class RazorpayPaymentProvider implements PaymentProvider {
 
-    @Value("${reverie.payment.razorpay.key-id:rzp_test_placeholder}")
+    @Value("${reverie.payment.razorpay.key-id:${RAZORPAY_KEY_ID:rzp_test_placeholder}}")
     private String keyId;
 
-    @Value("${reverie.payment.razorpay.key-secret:rzp_secret_placeholder}")
+    @Value("${reverie.payment.razorpay.key-secret:${RAZORPAY_KEY_SECRET:rzp_secret_placeholder}}")
     private String keySecret;
 
-    @Value("${reverie.payment.razorpay.webhook-secret:rzp_webhook_placeholder}")
+    @Value("${reverie.payment.razorpay.webhook-secret:${RAZORPAY_WEBHOOK_SECRET:rzp_webhook_placeholder}}")
     private String webhookSecret;
 
     @Override
