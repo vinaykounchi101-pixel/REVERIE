@@ -4,10 +4,9 @@ services:
   # =========================================================================
   - type: web
     name: reverie-backend
-    runtime: java
+    runtime: docker
     rootDir: reverie-backend
-    buildCommand: mvn clean package -DskipTests
-    startCommand: java -Dserver.port=$PORT -Dspring.profiles.active=prod -jar target/reverie-backend-1.0.0-SNAPSHOT.jar
+    dockerfilePath: Dockerfile
     plan: free
     healthCheckPath: /actuator/health
     envVars:
