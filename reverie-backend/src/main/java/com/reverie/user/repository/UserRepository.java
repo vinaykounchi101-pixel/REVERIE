@@ -25,4 +25,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Page<User> findByEmailContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrderByCreatedAtDesc(
             String email, String firstName, String lastName, Pageable pageable);
+
+    Page<User> findByRoleAndIsActiveTrueAndMarketingConsentTrueAndUnsubscribedAtIsNull(Role role, Pageable pageable);
+
+    long countByRoleAndIsActiveTrueAndMarketingConsentTrueAndUnsubscribedAtIsNull(Role role);
 }

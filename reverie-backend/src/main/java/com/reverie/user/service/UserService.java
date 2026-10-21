@@ -43,6 +43,14 @@ public class UserService {
         if (request.getPhone() != null) {
             user.setPhone(request.getPhone().trim());
         }
+        if (request.getMarketingConsent() != null) {
+            user.setMarketingConsent(request.getMarketingConsent());
+            if (!request.getMarketingConsent()) {
+                user.setUnsubscribedAt(java.time.Instant.now());
+            } else {
+                user.setUnsubscribedAt(null);
+            }
+        }
 
         User updatedUser = userRepository.save(user);
         return UserDto.fromEntity(updatedUser);

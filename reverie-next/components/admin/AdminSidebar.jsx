@@ -18,6 +18,7 @@ import {
   LogOut,
   ChevronRight,
   ExternalLink,
+  Mail,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -48,6 +49,7 @@ const NAVIGATION_GROUPS = [
     title: 'Client Experience',
     items: [
       { id: 'customers', label: 'Collector Directory', icon: Users },
+      { id: 'email-automation', label: 'Email & Campaigns', icon: Mail },
       { id: 'concierge', label: 'Private Concierge', icon: Calendar },
       { id: 'support', label: 'Atelier Support', icon: LifeBuoy },
       { id: 'reviews', label: 'Verified Reviews', icon: Star },

@@ -159,6 +159,39 @@ public class EmailService {
         dispatchEmail(toEmail, subject, htmlContent, orderNumber, "ORDER_INVOICE");
     }
 
+    /**
+     * Sends the Customer Login Alert Notification
+     */
+    public void sendCustomerLoginAlert(String toEmail, String recipientName, String loginTime, String clientIp) {
+        String subject = "REVERIE — Security Notice: New Sign-in to Your Account";
+        String name = (recipientName != null && !recipientName.isBlank()) ? recipientName : "Valued Collector";
+
+        String htmlContent = buildLuxuryNotificationEmailHtml(
+                "SECURITY ALERT",
+                "Dear " + name + ",",
+                "We detected a successful sign-in to your REVERIE collector account on " + loginTime +
+                        (clientIp != null && !clientIp.isBlank() ? " from IP " + clientIp : "") +
+                        ". If this was you, no further action is required.",
+                "AUTHENTICATED SESSION",
+                "If you did not authorize this session, please contact the REVERIE Concierge immediately or reset your password to protect your horology portfolio."
+        );
+
+        dispatchEmail(toEmail, subject, htmlContent, "SECURITY_ALERT", "CUSTOMER_LOGIN_ALERT");
+    }
+
+    /**
+     * Sends a Seasonal / Marketing Promotional Campaign Email
+     */
+    public boolean sendMarketingEmail(String toEmail, String subject, String htmlContent) {
+        try {
+            dispatchEmail(toEmail, subject, htmlContent, "CAMPAIGN", "MARKETING_CAMPAIGN");
+            return true;
+        } catch (Exception e) {
+            log.error("[MARKETING EMAIL ERROR] Failed to dispatch campaign email to {}: {}", toEmail, e.getMessage());
+            return false;
+        }
+    }
+
     private String resolveBrevoApiKey() {
         if (brevoApiKey != null && !brevoApiKey.isBlank() && !brevoApiKey.contains("${")) return brevoApiKey.trim();
         for (String k : List.of("BREVO_API_KEY", "BREVO_KEY", "BREVO_APIKEY", "SENDINBLUE_API_KEY", "SENDINBLUE_KEY", "BREVO_SMTP_KEY")) {
@@ -446,6 +479,90 @@ public class EmailService {
                 .replace("{{GREETING}}", greeting != null ? greeting : "Dear Collector,")
                 .replace("{{BODY_TEXT}}", bodyText != null ? bodyText : "")
                 .replace("{{CODE}}", code != null ? code : "")
+                .replace("{{FOOTER_NOTE}}", footerNote != null ? footerNote : "")
+                .replace("{{YEAR}}", String.valueOf(java.time.Year.now().getValue()));
+    }
+
+    private String buildLuxuryNotificationEmailHtml(String headerBadge, String greeting, String bodyText, String noticeTitle, String footerNote) {
+        String template = """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>REVERIE Haute Horlogerie</title>
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #0b0c10; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e2e4e9;">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; background-color: #0b0c10; padding: 40px 20px;">
+                    <tr>
+                        <td align="center">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 580px; background-color: #121318; border: 1px solid #232530; border-radius: 8px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+                                
+                                <!-- Brand Header -->
+                                <tr>
+                                    <td align="center" style="padding: 40px 30px 24px 30px; border-bottom: 1px solid #1c1e26; background: #181920;">
+                                        <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; color: #c5a059; margin-bottom: 8px;">
+                                            {{HEADER_BADGE}}
+                                        </div>
+                                        <div style="font-size: 28px; font-weight: 300; letter-spacing: 0.3em; text-transform: uppercase; color: #ffffff; margin: 0;">
+                                            R E V E R I E
+                                        </div>
+                                        <div style="font-size: 9px; font-weight: 500; letter-spacing: 0.35em; text-transform: uppercase; color: #888d9a; margin-top: 6px;">
+                                            Genève • Haute Horlogerie
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Message Body -->
+                                <tr>
+                                    <td style="padding: 36px 36px 20px 36px;">
+                                        <p style="font-size: 15px; font-weight: 600; color: #ffffff; margin: 0 0 14px 0; letter-spacing: 0.02em;">
+                                            {{GREETING}}
+                                        </p>
+                                        <p style="font-size: 14px; line-height: 1.6; color: #a1a5b3; margin: 0 0 28px 0;">
+                                            {{BODY_TEXT}}
+                                        </p>
+
+                                        <!-- Luxury Notice Banner -->
+                                        <div style="background-color: #0d0d12; border: 1px solid #2b2e3b; border-left: 3px solid #d4af37; border-radius: 4px; padding: 18px 20px; margin: 24px 0;">
+                                            <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #d4af37; margin-bottom: 6px;">
+                                                {{NOTICE_TITLE}}
+                                            </div>
+                                            <p style="font-size: 12px; line-height: 1.6; color: #a1a5b3; margin: 0;">
+                                                Your horology account is protected with end-to-end cryptographic authentication.
+                                            </p>
+                                        </div>
+
+                                        <p style="font-size: 12px; line-height: 1.5; color: #737785; margin: 20px 0 0 0;">
+                                            {{FOOTER_NOTE}}
+                                        </p>
+                                    </td>
+                                </tr>
+
+                                <!-- Footer -->
+                                <tr>
+                                    <td align="center" style="padding: 24px 30px; background-color: #0e0f14; border-top: 1px solid #1c1e26;">
+                                        <p style="font-size: 11px; color: #5f6371; line-height: 1.6; margin: 0;">
+                                            © {{YEAR}} REVERIE SA. All rights reserved.<br>
+                                            Manufacture Horlogère Suisse, Rue du Rhône, 1204 Genève, Switzerland.<br>
+                                            Confidential security dispatch.
+                                        </p>
+                                    </td>
+                                </tr>
+
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+            """;
+
+        return template
+                .replace("{{HEADER_BADGE}}", headerBadge != null ? headerBadge : "SECURITY")
+                .replace("{{GREETING}}", greeting != null ? greeting : "Dear Collector,")
+                .replace("{{BODY_TEXT}}", bodyText != null ? bodyText : "")
+                .replace("{{NOTICE_TITLE}}", noticeTitle != null ? noticeTitle : "SECURITY DISPATCH")
                 .replace("{{FOOTER_NOTE}}", footerNote != null ? footerNote : "")
                 .replace("{{YEAR}}", String.valueOf(java.time.Year.now().getValue()));
     }

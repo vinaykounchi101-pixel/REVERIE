@@ -15,11 +15,12 @@ public class UserDto {
     private String phone;
     private Role role;
     private boolean isVerified;
+    private boolean marketingConsent;
     private Instant createdAt;
 
     public UserDto() {}
 
-    public UserDto(UUID id, String email, String firstName, String lastName, String phone, Role role, boolean isVerified, Instant createdAt) {
+    public UserDto(UUID id, String email, String firstName, String lastName, String phone, Role role, boolean isVerified, boolean marketingConsent, Instant createdAt) {
         this.id = id;
         this.email = email;
         this.firstName = firstName;
@@ -27,6 +28,7 @@ public class UserDto {
         this.phone = phone;
         this.role = role;
         this.isVerified = isVerified;
+        this.marketingConsent = marketingConsent;
         this.createdAt = createdAt;
     }
 
@@ -39,6 +41,7 @@ public class UserDto {
                 user.getPhone(),
                 user.getRole(),
                 user.isVerified(),
+                user.isMarketingConsent(),
                 user.getCreatedAt()
         );
     }
@@ -63,6 +66,9 @@ public class UserDto {
 
     public boolean isVerified() { return isVerified; }
     public void setVerified(boolean verified) { isVerified = verified; }
+
+    public boolean isMarketingConsent() { return marketingConsent; }
+    public void setMarketingConsent(boolean marketingConsent) { this.marketingConsent = marketingConsent; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

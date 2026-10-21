@@ -191,10 +191,30 @@
 
 ---
 
+### Sprint 18: Additive Email Automation System, n8n Cloud Workflow & Seasonal Marketing Campaigns
+- **Flyway Migration V8 (`V8__email_automation_and_campaigns.sql`)**:
+  - Added `marketing_consent` and `unsubscribed_at` tracking to `users` table with performance index.
+  - Created `email_automation_settings`, `email_campaigns`, and `email_campaign_sends` with `uk_campaign_customer` idempotency constraint.
+- **Backend Architecture & Non-Blocking Login Dispatcher**:
+  - Implemented `EmailAutomationService`, JPA entities, and repositories.
+  - Hooked non-blocking asynchronous login alerts into `AuthService.login(...)` strictly for customer password logins (0 alerts for `/api/auth/admin/login`).
+  - Added multi-provider dispatch switching (`BREVO` and `N8N`).
+  - Bounded batch campaign execution (50 recipients per batch) honoring explicit opt-in and unsubscribe state.
+  - Added public `/api/auth/unsubscribe` endpoint.
+- **n8n Cloud Workflow Deliverable**:
+  - Created `prompt/REVERIE_n8n_email_automation_template.json` with Webhook (login events) and Schedule (cron campaigns) trigger paths.
+- **Atelier Admin CMS Integration**:
+  - Added `EmailAutomationView.jsx` with tabs for Provider/Settings controls and Campaign management, wired into `AdminSidebar.jsx` and `app/admin/page.jsx`.
+- **Unit & Regression Tests**:
+  - Added `EmailAutomationServiceTest` and `AuthServiceLoginNotificationTest` (9 tests passed, 0 failures).
+  - Next.js production build (`npm run build`) succeeded with 0 errors across 15 routes.
+
+---
+
 ## Test & Build Verification Summary
-- **Backend Tests & Build**: 39/39 passing test suites (`mvn test`) and clean compilation (`mvn compile -DskipTests`).
+- **Backend Tests & Build**: All test suites passing (`mvn test`), including newly added `EmailAutomationServiceTest` and `AuthServiceLoginNotificationTest`.
 - **Frontend Build**: 15/15 static & dynamic routes compiled cleanly with 0 errors (`npm run build`).
-- **Database**: Supabase PostgreSQL 17.11 with Flyway V1 through V7 migrations verified and active.
+- **Database**: Supabase PostgreSQL 17.11 with Flyway V1 through V8 migrations ready.
 - **Production Deployments**: Vercel frontend (`https://reverie-teal.vercel.app/`) actively connected to Spring Boot backend via Cloudflare tunnel.
-- **Daemons**: Spring Boot (port 8080), Next.js (port 3000), and Cloudflare Tunnel active and fully integrated.
+
 

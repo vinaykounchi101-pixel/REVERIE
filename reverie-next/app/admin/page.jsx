@@ -26,6 +26,7 @@ import FaqsView from '../../components/admin/views/FaqsView';
 import UsersView from '../../components/admin/views/UsersView';
 import AuditView from '../../components/admin/views/AuditView';
 import SettingsView from '../../components/admin/views/SettingsView';
+import EmailAutomationView from '../../components/admin/views/EmailAutomationView';
 
 const TAB_METADATA = {
   overview: {
@@ -59,6 +60,10 @@ const TAB_METADATA = {
   customers: {
     title: 'Collector & Patron Directory',
     subtitle: 'High-net-worth patron histories, VIP tiers and bespoke commission records',
+  },
+  'email-automation': {
+    title: 'Email Automation & Campaigns',
+    subtitle: 'Multi-provider dispatching (Brevo & n8n), login security notifications, and seasonal promotions',
   },
   concierge: {
     title: 'Private Concierge Bookings',
@@ -269,6 +274,7 @@ export default function AdminPortalPage() {
           {activeTab === 'returns' && <ReturnsView />}
           {activeTab === 'products' && <ProductsView />}
           {activeTab === 'customers' && <CustomersView />}
+          {activeTab === 'email-automation' && <EmailAutomationView />}
           {activeTab === 'concierge' && <ConciergeView />}
           {activeTab === 'support' && <SupportView />}
           {activeTab === 'reviews' && <ReviewsView />}

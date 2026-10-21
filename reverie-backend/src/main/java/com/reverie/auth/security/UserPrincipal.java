@@ -42,6 +42,7 @@ public class UserPrincipal implements UserDetails {
     }
 
     public UUID getId() { return id; }
+    public String getEmail() { return email; }
     public Role getRole() { return role; }
     public boolean isVerified() { return isVerified; }
 

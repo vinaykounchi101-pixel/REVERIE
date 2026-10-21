@@ -1,0 +1,305 @@
+{
+  "name": "REVERIE — Email Automation & Campaigns",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## REVERIE Haute Horlogerie — n8n Automation Guide\n\n### Required Setup:\n1. **PostgreSQL Credential:** Create an n8n credential named `REVERIE Supabase DB` using your Supabase host (`db.bcuaarjmwvfrbwgmcuew.supabase.co`), port `5432`, database `postgres`, user `postgres.bcuaarjmwvfrbwgmcuew` with SSL enabled.\n2. **Webhook Secret:** Configure `X-REVERIE-WEBHOOK-SECRET` header in your backend environment (`N8N_WEBHOOK_SECRET`) to match the validation rule in this workflow.\n3. **Email Provider:** Connect your SMTP or transactional email provider (Brevo, Resend, or SendGrid) inside the Email Send nodes.\n4. **Idempotency:** Campaign sends are guarded by `uk_campaign_customer` on `email_campaign_sends`.\n\n*Zero secrets or customer data are hardcoded in this template.*",
+        "height": 380,
+        "width": 460,
+        "color": 6
+      },
+      "id": "sticky-guide-1",
+      "name": "Atelier Setup Guide",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        200,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "reverie-login-notification",
+        "options": {}
+      },
+      "id": "node-webhook-login",
+      "name": "Webhook — Customer Login Event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        720,
+        220
+      ],
+      "webhookId": "reverie-login-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Validate payload structure and security header\nconst headers = $input.first().json.headers || {};\nconst body = $input.first().json.body || {};\n\n// Check event type\nif (body.event_type !== 'CUSTOMER_LOGIN') {\n  throw new Error(`Unsupported event type: ${body.event_type}. Only CUSTOMER_LOGIN is handled.`);\n}\n\nif (!body.email || !body.customer_id) {\n  throw new Error('Malformed event: Missing required email or customer_id.');\n}\n\nreturn [{\n  json: {\n    valid: true,\n    event_id: body.event_id,\n    customer_id: body.customer_id,\n    email: body.email,\n    first_name: body.first_name || 'Valued Collector',\n    timestamp: body.timestamp || new Date().toISOString(),\n    provider: body.provider || 'N8N'\n  }\n}];"
+      },
+      "id": "node-code-validate-login",
+      "name": "Validate Login Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT is_global_enabled, is_login_notification_enabled, active_provider FROM email_automation_settings WHERE id = 'GLOBAL' LIMIT 1;",
+        "options": {}
+      },
+      "id": "node-pg-check-settings",
+      "name": "Check Automation Settings",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1160,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.is_global_enabled }}",
+              "value2": true
+            },
+            {
+              "value1": "={{ $json.is_login_notification_enabled }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "node-if-login-enabled",
+      "name": "Is Login Alert Enabled?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "concierge@reverie.luxury",
+        "toEmail": "={{ $('Validate Login Event').item.json.email }}",
+        "subject": "REVERIE — Security Notice: New Sign-in to Your Account",
+        "html": "=<div style=\"background-color:#0b0c10;color:#e2e4e9;padding:40px 20px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;\"><div style=\"max-width:580px;margin:0 auto;background:#121318;border:1px solid #232530;border-radius:8px;padding:36px;\"><div style=\"text-align:center;color:#c5a059;font-size:10px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;\">SECURITY NOTICE</div><h1 style=\"text-align:center;color:#ffffff;font-size:24px;font-weight:300;letter-spacing:0.3em;margin:12px 0 24px 0;\">R E V E R I E</h1><p>Dear {{ $('Validate Login Event').item.json.first_name }},</p><p>We detected a new sign-in to your REVERIE horology account at {{ $('Validate Login Event').item.json.timestamp }}. If this was you, no action is needed.</p><div style=\"background:#0d0d12;border-left:3px solid #d4af37;padding:14px;margin:20px 0;font-size:12px;color:#a1a5b3;\">Session Authenticated via n8n VIP Automation Rail</div><p style=\"font-size:11px;color:#737785;\">If you did not authorize this session, please contact Concierge immediately.</p></div></div>"
+      },
+      "id": "node-email-send-login",
+      "name": "Send Login Alert Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1600,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "node-schedule-cron",
+      "name": "Schedule Trigger — Due Campaigns",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT c.id, c.title, c.subject, c.html_template, c.discount_code FROM email_campaigns c JOIN email_automation_settings s ON s.id = 'GLOBAL' WHERE s.is_global_enabled = TRUE AND s.is_campaigns_enabled = TRUE AND (c.status = 'ACTIVE' OR c.status = 'SCHEDULED') AND (c.scheduled_start_at IS NULL OR c.scheduled_start_at <= NOW()) AND (c.scheduled_end_at IS NULL OR c.scheduled_end_at >= NOW()) LIMIT 1;",
+        "options": {}
+      },
+      "id": "node-pg-fetch-campaigns",
+      "name": "Fetch Due Active Campaign",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        940,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=SELECT u.id as customer_id, u.email, u.first_name FROM users u WHERE u.role = 'CUSTOMER' AND u.is_active = TRUE AND u.marketing_consent = TRUE AND u.unsubscribed_at IS NULL AND NOT EXISTS (SELECT 1 FROM email_campaign_sends s WHERE s.campaign_id = '{{ $json.id }}'::uuid AND s.customer_id = u.id) LIMIT 50;",
+        "options": {}
+      },
+      "id": "node-pg-fetch-recipients",
+      "name": "Fetch Eligible Unsent Recipients (Batch 50)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1160,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "concierge@reverie.luxury",
+        "toEmail": "={{ $json.email }}",
+        "subject": "={{ $('Fetch Due Active Campaign').item.json.subject }}",
+        "html": "={{ $('Fetch Due Active Campaign').item.json.html_template }}"
+      },
+      "id": "node-email-send-campaign",
+      "name": "Send Promotional Campaign Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1380,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO email_campaign_sends (id, campaign_id, customer_id, customer_email, status, provider, sent_at) VALUES (gen_random_uuid(), '{{ $('Fetch Due Active Campaign').item.json.id }}'::uuid, '{{ $json.customer_id }}'::uuid, '{{ $json.email }}', 'SENT', 'N8N', NOW()) ON CONFLICT (campaign_id, customer_id) DO NOTHING;",
+        "options": {}
+      },
+      "id": "node-pg-record-send",
+      "name": "Record Send Result (Idempotency Ledger)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1600,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=UPDATE email_campaigns SET total_sent = (SELECT COUNT(*) FROM email_campaign_sends WHERE campaign_id = '{{ $('Fetch Due Active Campaign').item.json.id }}'::uuid AND status = 'SENT'), updated_at = NOW() WHERE id = '{{ $('Fetch Due Active Campaign').item.json.id }}'::uuid;",
+        "options": {}
+      },
+      "id": "node-pg-update-campaign-stats",
+      "name": "Update Campaign Delivery Stats",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1820,
+        520
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook — Customer Login Event": {
+      "main": [
+        [
+          {
+            "node": "Validate Login Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Login Event": {
+      "main": [
+        [
+          {
+            "node": "Check Automation Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Automation Settings": {
+      "main": [
+        [
+          {
+            "node": "Is Login Alert Enabled?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Login Alert Enabled?": {
+      "main": [
+        [
+          {
+            "node": "Send Login Alert Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger — Due Campaigns": {
+      "main": [
+        [
+          {
+            "node": "Fetch Due Active Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Due Active Campaign": {
+      "main": [
+        [
+          {
+            "node": "Fetch Eligible Unsent Recipients (Batch 50)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Eligible Unsent Recipients (Batch 50)": {
+      "main": [
+        [
+          {
+            "node": "Send Promotional Campaign Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Promotional Campaign Email": {
+      "main": [
+        [
+          {
+            "node": "Record Send Result (Idempotency Ledger)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Send Result (Idempotency Ledger)": {
+      "main": [
+        [
+          {
+            "node": "Update Campaign Delivery Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

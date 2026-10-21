@@ -153,4 +153,16 @@ public class AuthController {
         authService.logout(userId, refreshToken, httpRequest);
         return ResponseEntity.ok(ApiResponse.message("Logged out successfully."));
     }
+
+    @PostMapping("/unsubscribe")
+    @Operation(summary = "Unsubscribe Customer", description = "Allows a recipient to opt out of promotional communications.")
+    public ResponseEntity<ApiResponse<Void>> unsubscribe(
+            @RequestParam(required = false) String email,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+        String targetEmail = (email != null && !email.isBlank()) ? email : (body != null ? body.get("email") : null);
+        if (targetEmail != null) {
+            authService.unsubscribe(targetEmail);
+        }
+        return ResponseEntity.ok(ApiResponse.message("You have been successfully unsubscribed from marketing communications."));
+    }
 }

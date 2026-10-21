@@ -69,6 +69,11 @@ app:
     brevo:
       api-key: ${BREVO_API_KEY:}
       api-url: ${BREVO_API_URL:https://api.brevo.com/v3/smtp/email}
+  email-automation:
+    n8n-webhook-url: ${N8N_WEBHOOK_URL:}
+    n8n-webhook-secret: ${N8N_WEBHOOK_SECRET:}
+    connect-timeout-ms: ${N8N_CONNECT_TIMEOUT_MS:3000}
+    read-timeout-ms: ${N8N_READ_TIMEOUT_MS:3000}
   auth:
     jwt-secret: ${JWT_SECRET:reverie-default-ultra-secure-development-jwt-secret-key-32bytes-min}
     access-token-expiration-seconds: ${JWT_ACCESS_EXPIRATION:900}

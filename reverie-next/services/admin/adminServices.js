@@ -399,3 +399,49 @@ export const adminUserService = {
     return res.data || res;
   },
 };
+
+export const adminEmailAutomationService = {
+  getSettings: async () => {
+    const res = await apiRequest('/admin/email-automation/settings');
+    return res.data || res;
+  },
+  updateSettings: async (settings) => {
+    const res = await apiRequest('/admin/email-automation/settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+    return res.data || res;
+  },
+  getCampaigns: async (page = 0, size = 50) => {
+    const res = await apiRequest(`/admin/email-automation/campaigns?page=${page}&size=${size}`);
+    return res.data || res;
+  },
+  getCampaign: async (id) => {
+    const res = await apiRequest(`/admin/email-automation/campaigns/${id}`);
+    return res.data || res;
+  },
+  createCampaign: async (campaignData) => {
+    const res = await apiRequest('/admin/email-automation/campaigns', {
+      method: 'POST',
+      body: JSON.stringify(campaignData),
+    });
+    return res.data || res;
+  },
+  updateCampaign: async (id, campaignData) => {
+    const res = await apiRequest(`/admin/email-automation/campaigns/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(campaignData),
+    });
+    return res.data || res;
+  },
+  triggerCampaign: async (id) => {
+    const res = await apiRequest(`/admin/email-automation/campaigns/${id}/trigger`, {
+      method: 'POST',
+    });
+    return res.data || res;
+  },
+  getCampaignSends: async (id, page = 0, size = 50) => {
+    const res = await apiRequest(`/admin/email-automation/campaigns/${id}/sends?page=${page}&size=${size}`);
+    return res.data || res;
+  },
+};

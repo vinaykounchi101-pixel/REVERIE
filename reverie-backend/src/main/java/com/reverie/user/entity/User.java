@@ -36,6 +36,12 @@ public class User {
     @Column(name = "is_verified", nullable = false)
     private boolean isVerified = false;
 
+    @Column(name = "marketing_consent", nullable = false)
+    private boolean marketingConsent = true;
+
+    @Column(name = "unsubscribed_at")
+    private Instant unsubscribedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -87,6 +93,12 @@ public class User {
 
     public boolean isVerified() { return isVerified; }
     public void setVerified(boolean verified) { isVerified = verified; }
+
+    public boolean isMarketingConsent() { return marketingConsent; }
+    public void setMarketingConsent(boolean marketingConsent) { this.marketingConsent = marketingConsent; }
+
+    public Instant getUnsubscribedAt() { return unsubscribedAt; }
+    public void setUnsubscribedAt(Instant unsubscribedAt) { this.unsubscribedAt = unsubscribedAt; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

@@ -61,6 +61,7 @@ REVERIE is a luxury Haute Horlogerie e-commerce platform built with a high-perfo
 5. `V5__reviews_and_concierge.sql`: Product reviews (`reviews`) and VIP concierge atelier appointment bookings (`concierge_appointments`).
 6. `V6__alter_image_to_text_and_add_women_watches.sql`: Upgraded media URLs to `TEXT` and seeded 4 Women's Haute Horlogerie models (*Aura Petit Diamond*, *Luna Pearl*, *Sovereign Rose*, *Elysium Sapphire*).
 7. `V7__update_watch_images_and_catalog.sql`: Updated timepiece records to high-resolution studio assets and seeded multi-angle gallery media.
+8. `V8__email_automation_and_campaigns.sql`: Added `marketing_consent` and `unsubscribed_at` tracking to `users`, created `email_automation_settings`, `email_campaigns`, and `email_campaign_sends` with `uk_campaign_customer` idempotency constraint.
 
 ---
 
@@ -70,12 +71,19 @@ REVERIE is a luxury Haute Horlogerie e-commerce platform built with a high-perfo
 |---|---|---|---|
 | `POST` | `/api/auth/register` | Customer registration (dispatches 6-digit OTP) | No |
 | `POST` | `/api/auth/verify-email` | Verify registration email OTP and return JWT session | No |
-| `POST` | `/api/auth/login` | Email/password login (requires verified email) | No |
+| `POST` | `/api/auth/login` | Email/password login (dispatches non-blocking login alert) | No |
+| `POST` | `/api/auth/unsubscribe` | Revoke marketing consent and record unsubscribe timestamp | No |
 | `POST` | `/api/auth/otp/request` | Request single-use 6-digit sign-in OTP code | No |
 | `POST` | `/api/auth/otp/verify` | Verify sign-in OTP and authenticate | No |
 | `POST` | `/api/auth/resend-otp` | Resend verification or reset OTP | No |
 | `POST` | `/api/auth/google` | Google OAuth token exchange | No |
-| `POST` | `/api/auth/admin/login` | Atelier admin login | No (Role-enforced) |
+| `POST` | `/api/auth/admin/login` | Atelier admin login (strictly zero customer alerts) | No (Role-enforced) |
+| `GET` | `/api/admin/email-automation/settings` | Get email provider, flags, and webhook configuration status | Admin |
+| `PUT` | `/api/admin/email-automation/settings` | Update active email provider (BREVO / N8N) and toggles | Admin |
+| `GET` | `/api/admin/email-automation/campaigns` | List paginated marketing campaigns | Admin |
+| `POST` | `/api/admin/email-automation/campaigns` | Create seasonal promotional campaign | Admin |
+| `POST` | `/api/admin/email-automation/campaigns/{id}/trigger` | Trigger bounded batch campaign delivery | Admin |
+| `GET` | `/api/admin/email-automation/campaigns/{id}/sends` | Per-customer campaign delivery idempotency logs | Admin |
 | `GET` | `/api/catalog/products` | Paginated product search & filters | No |
 | `GET` | `/api/catalog/products/{slug}` | Product details by slug | No |
 | `GET` | `/api/cart` | Retrieve current cart | Optional (Guest/User) |

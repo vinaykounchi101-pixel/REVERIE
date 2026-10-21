@@ -14,6 +14,7 @@ public class UpdateProfileRequest {
     private String lastName;
 
     private String phone;
+    private Boolean marketingConsent;
 
     public UpdateProfileRequest() {}
 
@@ -31,4 +32,7 @@ public class UpdateProfileRequest {
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+
+    public Boolean getMarketingConsent() { return marketingConsent; }
+    public void setMarketingConsent(Boolean marketingConsent) { this.marketingConsent = marketingConsent; }
 }

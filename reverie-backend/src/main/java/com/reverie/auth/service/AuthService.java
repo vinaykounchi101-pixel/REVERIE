@@ -11,6 +11,7 @@ import com.reverie.common.error.BusinessException;
 import com.reverie.common.error.ConflictException;
 import com.reverie.common.error.ErrorCode;
 import com.reverie.common.error.ResourceNotFoundException;
+import com.reverie.emailautomation.service.EmailAutomationService;
 import com.reverie.user.dto.UserDto;
 import com.reverie.user.entity.Role;
 import com.reverie.user.entity.User;
@@ -43,6 +44,7 @@ public class AuthService {
     private final RateLimiterService rateLimiterService;
     private final AuditService auditService;
     private final EmailService emailService;
+    private final EmailAutomationService emailAutomationService;
 
     @Value("${app.auth.access-token-expiration-seconds:900}")
     private long jwtExpirationSeconds;
@@ -71,7 +73,8 @@ public class AuthService {
             JwtTokenProvider tokenProvider,
             RateLimiterService rateLimiterService,
             AuditService auditService,
-            EmailService emailService) {
+            EmailService emailService,
+            EmailAutomationService emailAutomationService) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.otpTokenRepository = otpTokenRepository;
@@ -80,6 +83,7 @@ public class AuthService {
         this.rateLimiterService = rateLimiterService;
         this.auditService = auditService;
         this.emailService = emailService;
+        this.emailAutomationService = emailAutomationService;
     }
 
     @Transactional
@@ -140,7 +144,15 @@ public class AuthService {
 
         rateLimiterService.reset(rateLimitKey);
 
+        // Non-blocking Customer Login Notification Trigger (Only for successful customer password logins)
+        emailAutomationService.dispatchCustomerLoginNotification(user, clientIp);
+
         return issueTokens(user, clientIp, "USER_LOGIN");
+    }
+
+    @Transactional
+    public boolean unsubscribe(String email) {
+        return emailAutomationService.unsubscribeCustomer(email);
     }
 
     @Transactional
