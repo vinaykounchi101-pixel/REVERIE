@@ -119,5 +119,24 @@ REVERIE is a luxury Haute Horlogerie e-commerce platform built with a high-perfo
 - **Session Sanitization**: `authService.js` automatically discards and clears unverified accounts, invalid tokens, or stale mock sessions.
 - **No Hardcoded Secrets**: All credentials, JWT keys, and API tokens are resolved via environment variables.
 - **Monetary Precision**: All currency calculations are handled as 64-bit integer paise/cents to avoid floating-point inaccuracies.
-- **Strict CORS**: Origins strictly validated against configured domains in production.
+- **Strict CORS**: Origins strictly validated against configured domains in production (includes `https://*.vercel.app` with credentials).
 - **Append-Only Audit Logs**: Every administrative and security-critical action is logged with actor, timestamp, IP, and action metadata.
+
+---
+
+## 6. Cloud Infrastructure & Hybrid Tunnel Deployment
+
+- **Supabase Cloud Database**:
+  - Connection Pooler: `aws-0-ap-southeast-1.pooler.supabase.com:5432` (PostgreSQL 17.11)
+  - Driver: `org.postgresql.Driver` with SSL (`sslmode=require`)
+  - Pool Manager: HikariCP 5.1 (`HikariPool-1`)
+  - Schema Version: v7 (Flyway validated)
+- **Vercel Production Frontend**:
+  - Deployment URL: `https://reverie-teal.vercel.app/`
+  - Framework: Next.js 14.2.35 App Router
+  - API Resolution: Configured via `NEXT_PUBLIC_API_URL` to route requests dynamically to backend tunnel/cloud endpoint.
+- **Cloudflare Secure HTTPS Tunnel**:
+  - Tunnel Host: `https://hospitals-occupation-gospel-payday.trycloudflare.com`
+  - Target: `http://localhost:8080` (Spring Boot 3.3 API)
+  - CORS: Full wildcard pattern matching in `WebConfig.java` enabling verified preflight exchanges for `https://reverie-teal.vercel.app`.
+

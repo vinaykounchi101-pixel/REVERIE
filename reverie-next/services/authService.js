@@ -3,10 +3,19 @@
  * Communicates with Spring Boot API endpoints under /api/auth
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL 
-  || ((typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
-    ? 'http://localhost:8080/api'
-    : '/api');
+function getResolvedApiBase() {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && envUrl.trim()) {
+    const trimmed = envUrl.trim();
+    return trimmed.endsWith('/api') ? trimmed : `${trimmed.replace(/\/+$/, '')}/api`;
+  }
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://localhost:8080/api';
+  }
+  return '/api';
+}
+
+const API_BASE = getResolvedApiBase();
 
 function getErrorMessage(json, fallback) {
   if (!json) return fallback;

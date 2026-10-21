@@ -175,11 +175,26 @@
 - **Payment Webhook Endpoint Flexibility**:
   - Configured `PaymentWebhookController.java` and `SecurityConfig.java` to support both `/api/webhooks/payments/razorpay` and `/api/v1/payments/webhook` with HMAC-SHA256 signature validation and idempotency.
 
+### Sprint 17: Supabase PostgreSQL Cloud Integration, Clean Flyway Schema Rebuild & Vercel Production Interconnection
+- **Supabase Cloud PostgreSQL Connectivity**:
+  - Connected Spring Boot 3.3.4 backend to Supabase PostgreSQL 17.11 (`aws-0-ap-southeast-1.pooler.supabase.com:5432`) using HikariCP SSL connection pooling.
+  - Resolved pooler username handling (`postgres.[project-ref]`) and dynamic environment ingestion in [ReverieApplication.java](file:///e:/Projects/REVERIE/reverie-backend/src/main/java/com/reverie/ReverieApplication.java).
+- **Clean Schema Rebuild & Seed Inventory**:
+  - Successfully dropped and rebuilt the `public` schema from scratch using Flyway migrations `V1` through `V7`.
+  - Re-seeded all 15 luxury timepieces, 16 metal variants, 15 attribute sets, 40 studio photography & gallery assets, 16 inventory allocations, 9 categories, 7 collections, brand stories, FAQs, and default administrator (`admin@reverie.app`).
+  - Generated comprehensive schema audit document in [docs/DATABASE_SCHEMA_SNAPSHOT.md](file:///e:/Projects/REVERIE/docs/DATABASE_SCHEMA_SNAPSHOT.md).
+- **Cloudflare Secure HTTPS Tunnel & Vercel Interconnection**:
+  - Deployed Cloudflare Tunnel (`cloudflared`) bridging public HTTPS traffic (`https://hospitals-occupation-gospel-payday.trycloudflare.com`) to the active local Spring Boot backend on port 8080.
+  - Verified CORS preflight handling in [WebConfig.java](file:///e:/Projects/REVERIE/reverie-backend/src/main/java/com/reverie/config/WebConfig.java) returning `HTTP 200` with `Access-Control-Allow-Origin: https://reverie-teal.vercel.app`.
+  - Redeployed Vercel production frontend (`https://reverie-teal.vercel.app/`) with `NEXT_PUBLIC_API_URL` pointing through the tunnel to the live backend and Supabase database.
+  - Verified live queries returning 12 active published products, categories, and collections on the Vercel production site.
+
 ---
 
 ## Test & Build Verification Summary
 - **Backend Tests & Build**: 39/39 passing test suites (`mvn test`) and clean compilation (`mvn compile -DskipTests`).
 - **Frontend Build**: 15/15 static & dynamic routes compiled cleanly with 0 errors (`npm run build`).
-- **Database**: PostgreSQL with Flyway V1 through V7 migrations validated.
-- **Email & Payment**: Brevo REST API v3, SMTP fallbacks, and Razorpay gateway integration verified.
-- **Daemons**: Spring Boot (port 8080), Next.js (port 3000), and PostgreSQL (port 5432) active and fully integrated.
+- **Database**: Supabase PostgreSQL 17.11 with Flyway V1 through V7 migrations verified and active.
+- **Production Deployments**: Vercel frontend (`https://reverie-teal.vercel.app/`) actively connected to Spring Boot backend via Cloudflare tunnel.
+- **Daemons**: Spring Boot (port 8080), Next.js (port 3000), and Cloudflare Tunnel active and fully integrated.
+
